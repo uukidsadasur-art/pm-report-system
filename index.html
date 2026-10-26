@@ -744,11 +744,11 @@
               <input type="file" id="multiPhotoInput" accept="image/*" multiple style="display:none;" onchange="handlePhotoFiles(this.files)" />
 
               <div style="display:flex;gap:8px;margin-top:8px;">
-                <button type="button" class="toggle-btn" style="flex:1;background:#e0f2fe;border-color:#7dd3fc;color:#0369a1;padding:8px;" onclick="generateDemoPhotosForCurrent()">
-                  ✨ สุ่มรูปจำลองให้เครื่องนี้
+                <button type="button" class="toggle-btn" style="flex:1;color:#dc2626;border-color:#fca5a5;background:#fef2f2;padding:8px;" onclick="clearPhotosForCurrent()">
+                  🗑️ ล้างรูปเครื่องนี้
                 </button>
-                <button type="button" class="toggle-btn" style="color:#dc2626;padding:8px;" onclick="clearPhotosForCurrent()">
-                  🗑️ ล้างรูป
+                <button type="button" class="toggle-btn" style="flex:1;color:#b45309;border-color:#fcd34d;background:#fffbeb;padding:8px;" onclick="clearCurrentItemOnly()">
+                  🧹 ล้างข้อมูลเครื่องนี้
                 </button>
               </div>
             </div>
@@ -762,9 +762,12 @@
               </button>
             </div>
 
-            <div style="margin-top:12px;text-align:center;">
-              <button type="button" class="toggle-btn" style="width:100%;padding:9px;background:#f1f5f9;color:#0f4c81;border-color:#cbd5e1;" onclick="switchTab('report')">
-                📄 เปิดดูหน้าตารายงานจริง (15 หน้า) / สั่งพิมพ์ PDF
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button type="button" class="toggle-btn" style="flex:1;padding:9px;background:#f1f5f9;color:#0f4c81;border-color:#cbd5e1;" onclick="switchTab('report')">
+                📄 ดูรายงาน 15 หน้า / พิมพ์ PDF
+              </button>
+              <button type="button" class="toggle-btn" style="padding:9px 12px;background:#fef2f2;color:#dc2626;border-color:#fca5a5;" onclick="clearAllMonthlyInputs()">
+                🧹 ล้างทั้งหมด (ขึ้นเดือนใหม่)
               </button>
             </div>
           </div>
@@ -1227,24 +1230,33 @@
       showMobileToast("✅ บันทึก URL เชื่อมต่อ Google Sheet เรียบร้อยแล้ว!");
     }
 
-    async function pushItemToGoogleSheet(item) {
+    async function pushItemToGoogleSheet(item, silent = false) {
       if (!gasWebAppUrl || !gasWebAppUrl.startsWith("https://script.google.com")) return;
       try {
-        showMobileToast(`☁️ กำลังส่งข้อมูลเครื่อง #${item.id} เข้า Google Sheet...`, "#0369a1");
+        if (!silent) showMobileToast(`☁️ กำลังส่งข้อมูลเครื่อง #${item.id} เข้า Google Sheet...`, "#0369a1");
         const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
         const nonAmpChecks = item.subItems.filter(s => s.type !== "amp").map(s => s.val || "");
         const photoOwner = getTargetItemForPhoto(item);
+        const pArr = photoOwner.photos || [];
+        // ส่งอาร์เรย์ 5 ช่องเสมอ เพื่อให้เมื่อมีการลบรูปหรือล้างค่า ช่องรูปใน Google Sheet จะถูกล้างเป็นค่าว่าง ("") ทันที
+        const fivePhotos = [
+          pArr[0] || "",
+          pArr[1] || "",
+          pArr[2] || "",
+          pArr[3] || "",
+          pArr[4] || ""
+        ];
         const payload = {
           round: roundText,
           id: item.id,
           category: item.category,
           name: item.name,
-          actionDate: item.actionDate,
-          ampValue: item.hasAmp ? item.ampValue : "",
+          actionDate: item.actionDate || "",
+          ampValue: item.hasAmp ? (item.ampValue || "") : "",
           checks: nonAmpChecks,
-          calPercent: item.hasCalibration ? item.calPercent : "",
+          calPercent: item.hasCalibration ? (item.calPercent || "") : "",
           note: item.note || "",
-          photos: photoOwner.hasCustomPhotos ? (photoOwner.photos || []) : []
+          photos: fivePhotos
         };
         const res = await fetch(gasWebAppUrl, {
           method: "POST",
@@ -1255,18 +1267,19 @@
           const json = await res.json();
           if (json && json.status === "success") {
             if (Array.isArray(json.photoUrls)) {
-              json.photoUrls.forEach((u, idx) => {
-                if (u && u.startsWith("http")) photoOwner.photos[idx] = u;
-              });
+              const cleaned = json.photoUrls.map(u => (u && u.startsWith("http")) ? u : "");
+              photoOwner.photos = cleaned.some(x => x !== "") ? cleaned : [];
+              persistStateToStorage();
             }
-            showMobileToast(`✅ อัปเดตเครื่อง #${item.id} ลง Google Sheet (แถวที่ ${json.row}) สำเร็จ!`, "#059669");
-            return;
+            if (!silent) showMobileToast(`✅ อัปเดตเครื่อง #${item.id} ลง Google Sheet (แถวที่ ${json.row}) สำเร็จ!`, "#059669");
+            return true;
           }
         }
-        showMobileToast(`✅ ส่งข้อมูลเครื่อง #${item.id} ไปยัง Google Sheet แล้ว!`, "#059669");
+        if (!silent) showMobileToast(`✅ ส่งข้อมูลเครื่อง #${item.id} ไปยัง Google Sheet แล้ว!`, "#059669");
+        return true;
       } catch (e) {
-        // Fallback no-cors if browser blocks redirect reading
-        showMobileToast(`✅ ส่งข้อมูลเครื่อง #${item.id} เข้า Google Sheet แล้ว!`, "#059669");
+        if (!silent) showMobileToast(`✅ ส่งข้อมูลเครื่อง #${item.id} เข้า Google Sheet แล้ว!`, "#059669");
+        return false;
       }
     }
 
@@ -1274,13 +1287,14 @@
       const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
       const lines = ALL_ITEMS.map(item => {
         const nonAmp = item.subItems.filter(s => s.type !== "amp");
+        const photoOwner = getTargetItemForPhoto(item);
+        const pArr = photoOwner.photos || [];
         const cols = [
-          new Date().toLocaleDateString("en-GB"),
+          item.isSaved ? new Date().toLocaleDateString("en-GB") : "",
           roundText,
           item.id,
           item.category,
           item.name,
-          item.photoGroup || "-",
           item.actionDate || "",
           item.hasAmp ? (item.ampValue || "") : "",
           nonAmp[0] ? (nonAmp[0].val || "") : "",
@@ -1289,7 +1303,12 @@
           nonAmp[3] ? (nonAmp[3].val || "") : "",
           nonAmp[4] ? (nonAmp[4].val || "") : "",
           item.hasCalibration ? (item.calPercent || "") : "",
-          (item.note || "").replace(/\t|\r|\n/g, " ")
+          (item.note || "").replace(/\t|\r|\n/g, " "),
+          pArr[0] || "",
+          pArr[1] || "",
+          pArr[2] || "",
+          pArr[3] || "",
+          pArr[4] || ""
         ];
         return cols.join("\t");
       });
@@ -1309,16 +1328,16 @@
           gasWebAppUrl,
           items: ALL_ITEMS.map(it => ({
             id: it.id,
-            actionDate: it.actionDate,
-            isSaved: it.isSaved,
-            ampValue: it.ampValue,
-            calPercent: it.calPercent,
-            note: it.note,
+            actionDate: it.actionDate || "",
+            isSaved: !!it.isSaved,
+            ampValue: it.ampValue || "",
+            calPercent: it.calPercent || "",
+            note: it.note || "",
             subVals: it.subItems.map(s => s.val || ""),
-            photos: it.photos
+            photos: Array.isArray(it.photos) ? it.photos : []
           }))
         };
-        localStorage.setItem("UU_PM_REPORT_STATE_V2", JSON.stringify(payload));
+        localStorage.setItem("UU_PM_REPORT_STATE_V3", JSON.stringify(payload));
         if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
           fetch("/api/state", {
             method: "POST",
@@ -1342,7 +1361,7 @@
       }
       if (!data) {
         try {
-          const raw = localStorage.getItem("UU_PM_REPORT_STATE_V2");
+          const raw = localStorage.getItem("UU_PM_REPORT_STATE_V3");
           if (raw) data = JSON.parse(raw);
         } catch (e) {}
       }
@@ -1359,19 +1378,17 @@
         data.items.forEach(saved => {
           const target = ALL_ITEMS.find(x => x.id === saved.id);
           if (target) {
-            target.actionDate = saved.actionDate ?? target.actionDate;
+            target.actionDate = saved.actionDate !== undefined ? saved.actionDate : "";
             target.isSaved = !!saved.isSaved;
-            target.ampValue = saved.ampValue ?? target.ampValue;
-            target.calPercent = saved.calPercent ?? target.calPercent;
-            target.note = saved.note ?? target.note;
+            target.ampValue = saved.ampValue !== undefined ? saved.ampValue : "";
+            target.calPercent = saved.calPercent !== undefined ? saved.calPercent : "";
+            target.note = saved.note !== undefined ? saved.note : "";
             if (Array.isArray(saved.subVals)) {
               target.subItems.forEach((s, i) => {
                 if (saved.subVals[i] !== undefined) s.val = saved.subVals[i];
               });
             }
-            if (Array.isArray(saved.photos) && saved.photos.length > 0) {
-              target.photos = saved.photos;
-            }
+            target.photos = Array.isArray(saved.photos) ? saved.photos : [];
           }
         });
       }
@@ -1693,18 +1710,45 @@
     }
 
     function removePhotoAt(slotIdx) {
-      const photoOwner = getTargetItemForPhoto(ALL_ITEMS[currentEquipIndex]);
+      const cur = ALL_ITEMS[currentEquipIndex];
+      const photoOwner = getTargetItemForPhoto(cur);
       photoOwner.photos.splice(slotIdx, 1);
+      photoOwner.hasCustomPhotos = true;
+      persistStateToStorage();
       renderPhotoSlots();
       renderAllViews();
+      pushItemToGoogleSheet(cur);
     }
 
     function clearPhotosForCurrent() {
-      const photoOwner = getTargetItemForPhoto(ALL_ITEMS[currentEquipIndex]);
+      const cur = ALL_ITEMS[currentEquipIndex];
+      const photoOwner = getTargetItemForPhoto(cur);
       photoOwner.photos = [];
-      photoOwner.hasCustomPhotos = false;
+      photoOwner.hasCustomPhotos = true;
+      persistStateToStorage();
       renderPhotoSlots();
       renderAllViews();
+      pushItemToGoogleSheet(cur);
+    }
+
+    function clearCurrentItemOnly() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      if (!confirm(`ต้องการล้างข้อมูลและรูปภาพของเครื่อง #${cur.id}: ${cur.name} (และลบออกจาก Google Sheet ด้วย) ใช่หรือไม่?`)) return;
+      cur.isSaved = false;
+      cur.actionDate = "";
+      if (cur.hasAmp) cur.ampValue = "";
+      if (cur.hasCalibration) cur.calPercent = "";
+      cur.note = "";
+      cur.subItems.forEach(s => {
+        if (s.type !== "amp") s.val = "";
+      });
+      const photoOwner = getTargetItemForPhoto(cur);
+      photoOwner.photos = [];
+      photoOwner.hasCustomPhotos = true;
+      persistStateToStorage();
+      renderMobileControls();
+      renderAllViews();
+      pushItemToGoogleSheet(cur);
     }
 
     function generateDemoPhotosForCurrent() {
@@ -2060,20 +2104,74 @@
       table.innerHTML = html;
     }
 
-    function clearAllMonthlyInputs() {
-      if (!confirm("ต้องการล้างเฉพาะค่าที่กรอกรายเดือนของทั้ง 76 รายการ เพื่อเตรียมตารางว่างสำหรับเดือนถัดไปหรือไม่?")) return;
+    function resetItemsToCleanTemplate() {
       ALL_ITEMS.forEach(item => {
         item.isSaved = false;
+        item.actionDate = "";
         if (item.hasAmp) item.ampValue = "";
         if (item.hasCalibration) item.calPercent = "";
         item.note = "";
         item.photos = [];
+        item.hasCustomPhotos = false;
         item.subItems.forEach(s => {
           if (s.type !== "amp") s.val = "";
         });
       });
+    }
+
+    async function clearAllMonthlyInputs() {
+      if (!confirm("ต้องการล้างค่าที่กรอกและรูปภาพของทั้ง 76 รายการ (รวมถึงล้างค่าใน Google Sheet ด้วย) เพื่อเตรียมขึ้นเดือนใหม่หรือไม่?")) return;
+
+      // เก็บรายการที่มีข้อมูลอยู่เพื่อส่งไปล้างใน Google Sheet
+      const itemsToClear = ALL_ITEMS.filter(it => {
+        const hasChecks = it.subItems.some(s => s.type !== "amp" && s.val);
+        const hasPhotos = Array.isArray(it.photos) && it.photos.some(p => p);
+        return it.isSaved || it.actionDate || it.ampValue || it.calPercent || it.note || hasChecks || hasPhotos;
+      });
+      const targetList = itemsToClear.length > 0 ? itemsToClear : ALL_ITEMS;
+
+      resetItemsToCleanTemplate();
+      persistStateToStorage();
       renderMobileControls();
       renderAllViews();
+
+      if (gasWebAppUrl && gasWebAppUrl.startsWith("https://script.google.com")) {
+        window._isClearingSheet = true;
+        try {
+          showMobileToast(`🧹 กำลังล้างข้อมูลใน Google Sheet (0/${targetList.length})...`, "#b45309");
+          const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+
+          // 1. ลองสั่ง clear_all แบบรวดเดียวก่อน (หากอัปเดตสคริปต์ล่าสุดแล้วจะเสร็จใน 1 วินาที)
+          let clearedFast = false;
+          try {
+            const res = await fetch(gasWebAppUrl, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({ action: "clear_all", round: roundText })
+            });
+            if (res.ok) {
+              const json = await res.json();
+              if (json && json.clearedAll) clearedFast = true;
+            }
+          } catch (e) {}
+
+          // 2. หากยังเป็นสคริปต์เวอร์ชันเดิม ให้ส่งล้างทีละชุดจนครบทุกรายการที่มีข้อมูล
+          if (!clearedFast) {
+            const batchSize = 4;
+            for (let i = 0; i < targetList.length; i += batchSize) {
+              const batch = targetList.slice(i, i + batchSize);
+              await Promise.all(batch.map(it => pushItemToGoogleSheet(it, true)));
+              const done = Math.min(targetList.length, i + batch.length);
+              showMobileToast(`🧹 กำลังล้างข้อมูลใน Google Sheet (${done}/${targetList.length})...`, "#b45309");
+            }
+          }
+          showMobileToast("✅ ล้างข้อมูลและลิงก์รูปภาพใน Google Sheet เรียบร้อยแล้ว! รีเฟรชหน้าเว็บได้เลยข้อมูลเก่าจะไม่กลับมาอีก", "#059669");
+        } finally {
+          window._isClearingSheet = false;
+        }
+      } else {
+        showMobileToast("✅ ล้างค่าทั้งหมดเรียบร้อยแล้ว!", "#059669");
+      }
     }
 
     function exportToExcel() {
@@ -2202,13 +2300,16 @@
     const GOOGLE_SHEET_ID = "1t44kkGGjRiUCRCYmySL62ohrPX5EBY8PJWU0CCTSmvQ";
 
     async function syncFromGoogleSheet(silent = false) {
+      if (window._isClearingSheet) return;
       try {
-        const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=1_Raw_Data`;
-        const res = await fetch(url);
+        const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=1_Raw_Data&_t=${Date.now()}`;
+        const res = await fetch(url, { cache: "no-store" });
         const text = await res.text();
         const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
         const data = JSON.parse(jsonStr);
         if (data && data.table && Array.isArray(data.table.rows)) {
+          const offset = (data.table.cols && data.table.cols.length >= 20) ? 1 : 0;
+          let latestDateFound = "";
           data.table.rows.forEach(row => {
             const c = row.c || [];
             const val = idx => (c[idx] && c[idx].v !== null && c[idx].v !== undefined) ? String(c[idx].f || c[idx].v).trim() : "";
@@ -2219,40 +2320,61 @@
               if (roundStr && document.getElementById("globalRound")) {
                 document.getElementById("globalRound").value = roundStr;
               }
-              const actDate = val(6);
-              if (actDate) {
-                target.actionDate = actDate;
-              }
-              if (val(0)) {
-                target.isSaved = true;
-              }
-              if (target.hasAmp && val(7) !== "") target.ampValue = val(7);
+              const actDate = val(5 + offset);
+              const ampVal = val(6 + offset);
+              target.actionDate = actDate;
+              if (actDate) latestDateFound = actDate;
+              if (target.hasAmp) target.ampValue = ampVal;
+
               const nonAmp = target.subItems.filter(s => s.type !== "amp");
+              let hasAnyCheck = false;
               for (let i = 0; i < nonAmp.length; i++) {
-                const checkVal = val(8 + i);
-                if (checkVal !== "") nonAmp[i].val = checkVal;
+                const checkVal = val(7 + offset + i);
+                nonAmp[i].val = checkVal;
+                if (checkVal !== "") hasAnyCheck = true;
               }
-              if (target.hasCalibration && val(13) !== "") {
-                target.calPercent = val(13);
+
+              const calVal = val(12 + offset);
+              if (target.hasCalibration) {
+                target.calPercent = calVal;
               }
-              if (val(14) !== "") target.note = val(14);
+              const noteVal = val(13 + offset);
+              target.note = noteVal;
+
+              const loadedPhotos = [];
+              let hasAnyPhoto = false;
               for (let p = 0; p < 5; p++) {
-                const pUrl = val(15 + p);
-                if (pUrl && pUrl.startsWith("http")) target.photos[p] = pUrl;
+                const pUrl = val(14 + offset + p);
+                if (pUrl && pUrl.startsWith("http")) {
+                  loadedPhotos[p] = pUrl;
+                  hasAnyPhoto = true;
+                } else {
+                  loadedPhotos[p] = "";
+                }
               }
+              target.photos = hasAnyPhoto ? loadedPhotos : [];
+              target.isSaved = Boolean(actDate || ampVal || hasAnyCheck || calVal || noteVal || hasAnyPhoto);
             }
           });
+          if (latestDateFound) {
+            lastSavedActionDate = latestDateFound;
+          }
+          const cur = ALL_ITEMS[currentEquipIndex];
+          if (cur && !cur.isSaved && !cur.actionDate) {
+            cur.actionDate = lastSavedActionDate;
+          }
+          persistStateToStorage();
           renderMobileControls();
           renderAllViews();
-          if (!silent) alert("✅ ดึงข้อมูลล่าสุดทั้ง 76 รายการจาก Google Sheet ของคุณเรียบร้อยแล้ว!");
+          if (!silent) showMobileToast("✅ ดึงข้อมูลล่าสุดทั้ง 76 รายการจาก Google Sheet เรียบร้อยแล้ว!", "#059669");
         }
       } catch (err) {
         if (!silent) alert("⚠️ ไม่สามารถดึงข้อมูลจาก Google Sheet ได้: " + err.message);
       }
     }
 
-    // เริ่มต้นระบบ
-    initDefaultPhotos();
+    // เริ่มต้นระบบด้วยตารางสะอาด (ไม่สร้างรูปจำลอง ไม่คืนค่าตัวอย่างเก่า) แล้วดึงข้อมูลจริงจาก Google Sheet
+    resetItemsToCleanTemplate();
     loadPersistedState().then(() => {
       renderMobileControls();
       renderAllViews();
