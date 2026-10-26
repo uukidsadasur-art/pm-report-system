@@ -57,6 +57,19 @@ function doPost(e) {
       rawSheet = ss.getSheetByName("1_Raw_Data");
     }
 
+    if (payload.action === "clear_all") {
+      const master = getMasterEquipmentList();
+      const roundStr = payload.round || "2/69";
+      const emptyRows = master.map(item => [
+        "", roundStr, item.id, item.cat, item.name,
+        "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+      ]);
+      rawSheet.getRange(2, 1, emptyRows.length, 19).setValues(emptyRows);
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", clearedAll: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     const dataRange = rawSheet.getDataRange().getValues();
     let targetRow = -1;
     for (let r = 1; r < dataRange.length; r++) {
