@@ -683,7 +683,7 @@
               <div style="display:grid;grid-template-columns:95px 1fr;gap:8px;">
                 <div>
                   <label class="form-label" style="font-size:12px;">ครั้งที่รายงาน</label>
-                  <input type="text" id="globalRound" class="form-control" style="padding:8px;font-size:15px;" value="2/69" oninput="renderAllViews()" />
+                  <input type="text" id="globalRound" class="form-control" style="padding:8px;font-size:15px;font-weight:700;color:#0f4c81;" value="2/69" oninput="onRoundInputChanged()" />
                 </div>
                 <div>
                   <label class="form-label" style="font-size:12px;display:flex;justify-content:space-between;align-items:center;">
@@ -1162,6 +1162,21 @@
       renderLivePreview();
     }
 
+    function onRoundInputChanged() {
+      const val = (document.getElementById("globalRound").value || "").trim();
+      window._userEditedRound = val;
+      persistStateToStorage();
+      renderAllViews();
+      clearTimeout(window._roundSaveTimer);
+      window._roundSaveTimer = setTimeout(async () => {
+        if (val && ALL_ITEMS[0]) {
+          await pushItemToGoogleSheet(ALL_ITEMS[0], true);
+          window._lastSyncedRoundOnRow1 = val;
+          showMobileToast(`✅ บันทึกครั้งที่รายงาน (${val}) ลง Google Sheet แล้ว`, "#059669");
+        }
+      }, 650);
+    }
+
     function onDateInputChanged() {
       const cur = ALL_ITEMS[currentEquipIndex];
       const newDate = document.getElementById("inputDate").value.trim();
@@ -1263,6 +1278,12 @@
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
+        if (item.id === 1) {
+          window._lastSyncedRoundOnRow1 = roundText;
+        } else if (window._lastSyncedRoundOnRow1 !== roundText && ALL_ITEMS[0]) {
+          window._lastSyncedRoundOnRow1 = roundText;
+          pushItemToGoogleSheet(ALL_ITEMS[0], true);
+        }
         if (res.ok) {
           const json = await res.json();
           if (json && json.status === "success") {
@@ -2316,9 +2337,13 @@
             const equipId = Number(val(2));
             const target = ALL_ITEMS.find(x => x.id === equipId);
             if (target) {
-              const roundStr = val(1);
-              if (roundStr && document.getElementById("globalRound")) {
-                document.getElementById("globalRound").value = roundStr;
+              // ดึงค่าครั้งที่รายงาน (Report_Round) จากแถวที่ 1 (ช่อง B2 ซึ่งหน้า 2_Report_Form อ้างอิง) เท่านั้น ไม่ให้แถว 2..76 มาเขียนทับ
+              if (equipId === 1) {
+                const roundStr = val(1);
+                if (roundStr && !window._userEditedRound && document.getElementById("globalRound")) {
+                  document.getElementById("globalRound").value = roundStr;
+                  window._lastSyncedRoundOnRow1 = roundStr;
+                }
               }
               const actDate = val(5 + offset);
               const ampVal = val(6 + offset);
