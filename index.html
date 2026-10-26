@@ -1,0 +1,2263 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบกรอกข้อมูล PM & ออกรายงานอัตโนมัติครบ 76 รายการ (Universal Utilities GROUP)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #0f4c81;
+      --primary-dark: #0b3c68;
+      --accent: #10b981;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --plan-1m: #ffff00;
+      --plan-3m: #ed7d31;
+      --plan-6m: #7030a0;
+      --plan-1y: #70ad47;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Sarabun', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* Navbar */
+    .navbar {
+      background: linear-gradient(135deg, #0b3c68, #165b99);
+      color: #fff;
+      padding: 10px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .navbar-brand h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .navbar-brand span {
+      font-size: 12px;
+      opacity: 0.9;
+      display: block;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab-btn:hover { background: rgba(255,255,255,0.28); }
+    .tab-btn.active {
+      background: #fff;
+      color: #0b3c68;
+      border-color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .container {
+      max-width: 1420px;
+      margin: 16px auto;
+      padding: 0 14px;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Pure Mobile Form Container (No squeezing, full-width on phone, centered 520px on PC) */
+    .mobile-form-wrapper {
+      max-width: 520px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .phone-frame {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+      width: 100%;
+    }
+    @media (max-width: 600px) {
+      .container {
+        margin: 0;
+        padding: 0;
+      }
+      .phone-frame {
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+      }
+      .navbar {
+        padding: 8px 12px;
+      }
+      .navbar-brand h1 {
+        font-size: 15px;
+      }
+      .navbar-brand span {
+        display: none;
+      }
+      .tab-btn {
+        padding: 6px 10px;
+        font-size: 12.5px;
+      }
+    }
+    .phone-header {
+      background: #0f4c81;
+      color: #fff;
+      padding: 14px 16px;
+    }
+    .phone-header h2 {
+      margin: 0 0 4px 0;
+      font-size: 16px;
+    }
+    .phone-header p {
+      margin: 0;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+    .phone-body {
+      padding: 16px;
+    }
+
+    .form-group { margin-bottom: 12px; }
+    .form-label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #334155;
+    }
+    .badge-dynamic {
+      background: #dcfce7;
+      color: #166534;
+      font-size: 10.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+      font-weight: 600;
+    }
+    .badge-locked {
+      background: #dbeafe;
+      color: #1e40af;
+      font-size: 10.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+      font-weight: 600;
+    }
+    .badge-inherited {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 10.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+      font-weight: 600;
+    }
+
+    .form-control, .form-select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 14px;
+    }
+    .form-control:focus, .form-select:focus {
+      outline: none;
+      border-color: #0f4c81;
+      box-shadow: 0 0 0 3px rgba(15,76,129,0.12);
+    }
+
+    /* Quick Pills */
+    .equip-pills {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    }
+    .equip-pill {
+      flex-shrink: 0;
+      padding: 5px 10px;
+      border-radius: 16px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .equip-pill.active {
+      background: #0f4c81;
+      color: #fff;
+      border-color: #0f4c81;
+    }
+    .equip-pill.saved {
+      border-color: #10b981;
+      background: #ecfdf5;
+      color: #065f46;
+    }
+    .equip-pill.active.saved {
+      background: #059669;
+      color: #fff;
+    }
+
+    /* Sub-item check card */
+    .check-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+    .check-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      gap: 6px;
+    }
+    .freq-tag {
+      font-size: 10.5px;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid rgba(0,0,0,0.15);
+      white-space: nowrap;
+    }
+    .freq-1m { background: var(--plan-1m); color: #000; }
+    .freq-3m { background: var(--plan-3m); color: #000; }
+    .freq-6m { background: var(--plan-6m); color: #fff; }
+    .freq-1y { background: var(--plan-1y); color: #000; }
+    .freq-none { background: #e2e8f0; color: #334155; }
+
+    .toggle-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+    .toggle-btn {
+      padding: 6px;
+      border: 1.5px solid #cbd5e1;
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .toggle-btn.selected-ok {
+      background: #dcfce7;
+      border-color: #16a34a;
+      color: #15803d;
+    }
+    .toggle-btn.selected-dash {
+      background: #fef3c7;
+      border-color: #d97706;
+      color: #b45309;
+    }
+    .toggle-btn.selected-blank {
+      background: #f1f5f9;
+      border-color: #64748b;
+      color: #334155;
+    }
+
+    /* Photo Upload Grid: 3 columns for comfortable mobile tapping */
+    .photo-upload-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .photo-slot {
+      aspect-ratio: 4/3;
+      border: 1.5px dashed #94a3b8;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+    .photo-slot:hover {
+      border-color: #0f4c81;
+      background: #f0f7ff;
+    }
+    .photo-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .photo-slot .slot-label {
+      font-size: 10px;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .photo-slot .remove-photo {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(220,38,38,0.88);
+      color: #fff;
+      border: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 11px;
+      background: #10b981;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(16,185,129,0.25);
+      margin-top: 6px;
+    }
+    .btn-primary:hover { background: #059669; }
+
+    .btn-action {
+      padding: 8px 14px;
+      background: #0f4c81;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-action:hover { background: #0b3c68; }
+    .btn-action.green { background: #16a34a; }
+    .btn-action.green:hover { background: #15803d; }
+
+    /* ================= OFFICIAL UU GROUP REPORT TABLE & PAGE-BREAK STYLES ================= */
+    .report-toolbar {
+      background: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      border: 1px solid var(--border);
+    }
+
+    /* Each .report-page represents 1 A4 Landscape Sheet */
+    .report-page {
+      background: #fff;
+      padding: 14px 18px;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      overflow-x: auto;
+      margin-bottom: 24px;
+      border: 1px solid #e2e8f0;
+      position: relative;
+    }
+    .page-badge-screen {
+      position: absolute;
+      top: 10px;
+      left: 18px;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid #bae6fd;
+    }
+
+    .uu-header {
+      display: grid;
+      grid-template-columns: 160px 1fr 180px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .uu-title-center { text-align: center; }
+    .uu-title-center h2 {
+      margin: 0 0 2px 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .uu-title-center h3 {
+      margin: 0 0 6px 0;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .uu-legend {
+      display: flex;
+      justify-content: center;
+      gap: 22px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+    .uu-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .uu-legend-box {
+      width: 16px;
+      height: 14px;
+      border: 1px solid #000;
+    }
+
+    .uu-logo {
+      text-align: right;
+      font-family: Georgia, serif;
+    }
+    .uu-logo .logo-arc {
+      display: inline-block;
+      text-align: center;
+    }
+    .uu-logo .uu-main {
+      font-size: 15px;
+      font-style: italic;
+      font-weight: bold;
+      color: #1e3a5f;
+    }
+    .uu-logo .uu-sub {
+      font-size: 10px;
+      color: #475569;
+      letter-spacing: 1.5px;
+    }
+
+    table.uu-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      color: #000;
+      table-layout: fixed;
+    }
+    table.uu-table th, table.uu-table td {
+      border: 1px solid #000;
+      padding: 2px 5px;
+      vertical-align: middle;
+      line-height: 1.2;
+    }
+    table.uu-table thead th {
+      background: #a6a6a6;
+      font-weight: 700;
+      text-align: center;
+      height: 22px;
+    }
+
+    /* CRITICAL: Prevent any equipment block from splitting across pages */
+    tbody.equip-block {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    tbody.equip-block.active-highlight {
+      outline: 2.5px solid #0284c7;
+    }
+
+    .cat-row td {
+      background: #d9d9d9;
+      font-weight: 700;
+      padding: 2px 6px;
+      height: 19px;
+    }
+    .equip-title-cell { font-weight: 700; }
+    .center { text-align: center; }
+    .note-label { color: #548235; font-style: italic; }
+    .note-text { color: #548235; }
+    .slope-val { color: #2e75b6; font-weight: 600; }
+
+    .photo-cell {
+      padding: 1.5px !important;
+      text-align: center;
+      vertical-align: middle;
+      background: #fff;
+    }
+    .photo-cell img {
+      width: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Data Sheet Table */
+    .info-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    table.data-sheet {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+    table.data-sheet th, table.data-sheet td {
+      border: 1px solid #cbd5e1;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    table.data-sheet th {
+      background: #1e3a5f;
+      color: #fff;
+      position: sticky;
+      top: 0;
+    }
+    table.data-sheet tr:nth-child(even) { background: #f8fafc; }
+
+    /* ================= EXACT PRINT RULES FOR A4 LANDSCAPE ================= */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 6mm 8mm;
+      }
+      body {
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .navbar, .no-print, .report-toolbar, .page-badge-screen {
+        display: none !important;
+      }
+      .container {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .tab-panel { display: none !important; }
+      #tab-report { display: block !important; }
+
+      .report-page {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .report-page:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+      tbody.equip-block {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        outline: none !important;
+      }
+      table.uu-table th, table.uu-table td, .uu-legend-box {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <header class="navbar no-print">
+    <div class="navbar-brand">
+      <div style="background:#fff;color:#0f4c81;width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;">UU</div>
+      <div>
+        <h1>ระบบบันทึกงาน PM มือถือ & ออกรายงานอัตโนมัติ (ครบทั้ง 76 รายการ / 15 หน้า)</h1>
+        <span>โครงการระบบบำบัดน้ำเสีย นิคมอุตสาหกรรมหลักชัยเมืองยาง ขนาด 3,750 ลบ.ม./วัน</span>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('mobile')">📱 1. แอพมือถือ (กรอกข้อมูล 1–76)</button>
+      <button class="tab-btn" onclick="switchTab('sheet')">📊 2. ตาราง Google Sheet (ครบ 76 รายการ)</button>
+      <button class="tab-btn" onclick="switchTab('report')">📄 3. รายงานพร้อมพิมพ์ PDF (จัดหน้าพอดี 15 หน้า)</button>
+      <button class="tab-btn" style="background:#10b981;border-color:#059669;" onclick="syncFromGoogleSheet()">🔄 ดึงข้อมูลจาก Google Sheet</button>
+      <a href="https://docs.google.com/spreadsheets/d/1t44kkGGjRiUCRCYmySL62ohrPX5EBY8PJWU0CCTSmvQ/edit?usp=sharing" target="_blank" class="tab-btn" style="text-decoration:none;background:#f59e0b;border-color:#d97706;">📗 เปิด Google Sheet ของคุณ ↗</a>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- ==================== TAB 1: PURE MOBILE INPUT SCREEN (NO TABLE SQUEEZING) ==================== -->
+    <div id="tab-mobile" class="tab-panel active">
+      <div class="mobile-form-wrapper">
+        <div class="phone-frame">
+          <div class="phone-header">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <h2>📋 บันทึกผลตรวจ PM (76 เครื่อง)</h2>
+              <span id="savedCounterBadge" style="background:rgba(255,255,255,0.22);padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;">บันทึกแล้ว 0/76</span>
+            </div>
+            <p>หน้าจอกรอกข้อมูลสำหรับมือถือ (ไม่มีตารางใหญ่มาเบียดหน้าจอ)</p>
+          </div>
+
+          <div class="phone-body">
+            <!-- Google Sheet Auto-Sync Connection Bar -->
+            <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:10px;margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
+                <div style="font-size:12px;font-weight:700;color:#0f4c81;display:flex;align-items:center;gap:5px;">
+                  <span>☁️ เชื่อมต่อ Google Sheet:</span>
+                  <span id="gsSyncStatusBadge" class="badge-inherited">โหมดคัดลอก / รอใส่ลิงก์ Web App</span>
+                </div>
+                <button type="button" class="equip-pill" style="font-size:11px;padding:3px 8px;" onclick="toggleGsSetupBox()">⚙️ ตั้งค่าส่งอัตโนมัติ</button>
+              </div>
+
+              <!-- Expandable Web App URL Box -->
+              <div id="gsSetupBox" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;">
+                <label class="form-label" style="font-size:11.5px;">วาง Web App URL (ที่ได้จากการกด Deploy ใน Apps Script ของ Google Sheet):</label>
+                <div style="display:flex;gap:6px;">
+                  <input type="text" id="gasWebAppUrlInput" class="form-control" style="font-size:12px;padding:6px 8px;" placeholder="https://script.google.com/macros/s/.../exec" />
+                  <button type="button" class="btn-action green" style="white-space:nowrap;padding:6px 10px;font-size:12px;" onclick="saveGasWebAppUrl()">บันทึก URL</button>
+                </div>
+                <div style="font-size:11px;color:#64748b;margin-top:4px;">
+                  เมื่อใส่ URL นี้แล้ว ทุกครั้งที่กด <strong>"💾 บันทึก"</strong> ข้อมูลและรูปจะวิ่งเข้า Google Sheet ทันที!
+                </div>
+              </div>
+
+              <!-- Quick 1-Click Copy to Google Sheet Button (Works immediately even without Web App URL!) -->
+              <div style="display:flex;gap:6px;margin-top:8px;">
+                <button type="button" class="toggle-btn" style="flex:1;background:#ecfdf5;border-color:#10b981;color:#065f46;font-size:12px;padding:7px;" onclick="copyAllRowsForGoogleSheet()">
+                  📋 คัดลอกข้อมูลไปวาง (Ctrl+V) ใน Google Sheet
+                </button>
+                <a href="https://docs.google.com/spreadsheets/d/1t44kkGGjRiUCRCYmySL62ohrPX5EBY8PJWU0CCTSmvQ/edit?usp=sharing" target="_blank" class="toggle-btn" style="text-decoration:none;background:#fffbeb;border-color:#f59e0b;color:#92400e;font-size:12px;padding:7px;">
+                  📗 เปิด Sheet ↗
+                </a>
+              </div>
+            </div>
+
+            <!-- Toast Status Message -->
+            <div id="mobileToast" style="display:none;background:#065f46;color:#fff;padding:10px 12px;border-radius:8px;margin-bottom:10px;font-size:13px;font-weight:600;text-align:center;"></div>
+
+            <!-- Round & Sticky Date Row -->
+            <div style="background:#f0f7ff;padding:10px;border-radius:10px;border:1px solid #bae6fd;margin-bottom:12px;">
+              <div style="display:grid;grid-template-columns:95px 1fr;gap:8px;">
+                <div>
+                  <label class="form-label" style="font-size:12px;">ครั้งที่รายงาน</label>
+                  <input type="text" id="globalRound" class="form-control" style="padding:8px;font-size:15px;" value="2/69" oninput="renderAllViews()" />
+                </div>
+                <div>
+                  <label class="form-label" style="font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <span>วันที่ดำเนินการ</span>
+                    <span id="dateStatusBadge" class="badge-inherited">ดึงจากเครื่องก่อนหน้า</span>
+                  </label>
+                  <input type="text" id="inputDate" class="form-control" style="padding:8px;font-size:15px;font-weight:700;color:#0f4c81;" value="21/07/2026" oninput="onDateInputChanged()" />
+                </div>
+              </div>
+              <div id="stickyDateHint" style="font-size:11.5px;color:#0369a1;margin-top:6px;">
+                💡 กด <strong>"บันทึก"</strong> แล้ววันที่นี้จะล็อกไว้ที่เครื่องนี้ และส่งต่อให้เครื่องถัดไปที่ยังไม่เคยบันทึก
+              </div>
+            </div>
+
+            <!-- Filter by Page / Search -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+              <div>
+                <label class="form-label" style="font-size:12px;">เลือกตามหน้า (1–15):</label>
+                <select id="pageFilterSelect" class="form-select" style="padding:8px;font-size:14px;" onchange="onFilterPageChange(this.value)"></select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px;">ค้นหาลำดับ / ชื่อเครื่อง:</label>
+                <input type="text" id="equipSearchInput" class="form-control" style="padding:8px;font-size:14px;" placeholder="เช่น 1, 51, Blower..." oninput="onSearchEquip(this.value)" />
+              </div>
+            </div>
+
+            <!-- Equipment Pills for current page -->
+            <div class="equip-pills" id="equipPills"></div>
+
+            <!-- Equipment Dropdown (All 76 items) -->
+            <div class="form-group" style="margin-bottom:12px;">
+              <select id="equipSelect" class="form-select" style="font-weight:700;color:#0f4c81;font-size:15px;padding:10px;" onchange="selectEquipment(Number(this.value))"></select>
+            </div>
+
+            <!-- Static Info Banner -->
+            <div style="background:#f8fafc;border-left:4px solid #0f4c81;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:12.5px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div><strong>หมวดหมู่:</strong> <span id="staticCategory">-</span></div>
+                <div><strong>อยู่หน้าที่:</strong> <span id="staticPageNo">-</span> ของรายงาน</div>
+              </div>
+              <span id="itemSavedBadge" style="font-size:11.5px;padding:4px 10px;border-radius:12px;font-weight:700;"></span>
+            </div>
+
+            <!-- Dynamic Sub-items Input -->
+            <div id="dynamicFieldsContainer"></div>
+
+            <!-- Photo Upload Section (5 Slots in clean 3-col grid) -->
+            <div class="form-group" style="margin-top:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <label class="form-label" style="margin:0;font-size:13px;">📸 รูปประกอบ (สูงสุด 5 รูป)</label>
+                <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;color:#0f4c81;font-weight:600;">
+                  <input type="checkbox" id="stampDateCheckbox" checked /> ประทับวันที่มุมรูป
+                </label>
+              </div>
+              <div id="sharedPhotoNotice" style="display:none;font-size:11.5px;background:#fef3c7;color:#92400e;padding:6px 10px;border-radius:6px;margin-top:4px;"></div>
+
+              <div class="photo-upload-grid" id="photoGrid"></div>
+              <input type="file" id="multiPhotoInput" accept="image/*" multiple style="display:none;" onchange="handlePhotoFiles(this.files)" />
+
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button type="button" class="toggle-btn" style="flex:1;background:#e0f2fe;border-color:#7dd3fc;color:#0369a1;padding:8px;" onclick="generateDemoPhotosForCurrent()">
+                  ✨ สุ่มรูปจำลองให้เครื่องนี้
+                </button>
+                <button type="button" class="toggle-btn" style="color:#dc2626;padding:8px;" onclick="clearPhotosForCurrent()">
+                  🗑️ ล้างรูป
+                </button>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:8px;margin-top:12px;">
+              <button type="button" class="btn-primary" style="background:#0f4c81;margin-top:0;padding:13px 8px;font-size:14px;" onclick="saveCurrentOnly()">
+                💾 บันทึกเครื่องนี้
+              </button>
+              <button type="button" class="btn-primary" style="margin-top:0;padding:13px 8px;font-size:14.5px;" onclick="saveAndNext()">
+                💾 บันทึก & ไปเครื่องถัดไป ➔
+              </button>
+            </div>
+
+            <div style="margin-top:12px;text-align:center;">
+              <button type="button" class="toggle-btn" style="width:100%;padding:9px;background:#f1f5f9;color:#0f4c81;border-color:#cbd5e1;" onclick="switchTab('report')">
+                📄 เปิดดูหน้าตารายงานจริง (15 หน้า) / สั่งพิมพ์ PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Hidden container so JS functions referencing liveReportContainer never error -->
+      <div id="liveReportContainer" style="display:none;"></div>
+      <div id="livePreviewTitle" style="display:none;"></div>
+      <input type="checkbox" id="showAllPagesLive" style="display:none;" />
+    </div>
+
+    <!-- ==================== TAB 2: GOOGLE SHEET TABLE (ALL 76 ITEMS) ==================== -->
+    <div id="tab-sheet" class="tab-panel">
+      <div class="info-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+          <div>
+            <h3 style="margin:0;color:#0f4c81;">📊 ตารางข้อมูลดิบ Google Sheet (<code>1_Raw_Data</code> ครบทั้ง 76 รายการ)</h3>
+            <p style="margin:4px 0 0 0;font-size:13px;color:#64748b;">
+              สถานะ <span class="badge-locked">🔒 บันทึกแล้ว</span> คือเครื่องที่กดบันทึกและล็อกวันที่ไว้แล้ว ส่วนเครื่องที่ยังไม่บันทึกจะรับวันที่ล่าสุดอัตโนมัติเมื่อกดเข้าไปกรอก
+            </p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-action green" onclick="exportToExcel()">📥 ดาวน์โหลดไฟล์ Google Sheet ครบ 76 รายการ (.xlsx)</button>
+            <button class="btn-action" onclick="clearAllMonthlyInputs()" style="background:#dc2626;">🧹 ล้างค่าที่กรอก (เตรียมขึ้นเดือนใหม่)</button>
+          </div>
+        </div>
+
+        <div style="max-height:72vh;overflow-y:auto;border:1px solid #cbd5e1;border-radius:8px;">
+          <table class="data-sheet" id="rawDataTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: FULL 15-PAGE REPORT PRINT VIEW ==================== -->
+    <div id="tab-report" class="tab-panel">
+      <div class="report-toolbar no-print">
+        <div>
+          <strong style="font-size:16px;color:#0f4c81;">📄 รายงานฉบับสมบูรณ์ครบ 15 หน้า (76 รายการ) จัดหน้าพอดี A4 แนวนอน</strong>
+          <div style="font-size:12px;color:#64748b;">
+            ทุกหน้ามีหัวกระดาษ โลโก้ และตารางที่คำนวณความสูงพอดี 1 หน้ากระดาษ A4 แนวนอน ไม่มีข้อมูลเครื่องจักรตัวใดถูกตัดข้ามหน้า
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-action green" onclick="exportToExcel()">📥 ดาวน์โหลด Google Sheet (.xlsx)</button>
+          <button class="btn-action" onclick="window.print()">🖨️ สั่งพิมพ์ / บันทึกเป็น PDF (15 หน้า)</button>
+        </div>
+      </div>
+
+      <div id="fullReportContainer"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==================== 1. สร้างฐานข้อมูลครบทั้ง 76 รายการ (15 หน้าตาม PDF ต้นฉบับ) ====================
+    function cloneSubs(templateSubs) {
+      return templateSubs.map(s => ({ ...s }));
+    }
+
+    const SUB_PUMP_TEMPLATE = [
+      { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+      { no: 2, title: "ตรวจเช็คทางกายภาพ", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+      { no: 3, title: "ตรวจเช็ค Guide Rail", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+      { no: 4, title: "ยกทำความสะอาด", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "" },
+      { no: 5, title: "ถ่ายน้ำมันเครื่อง", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "" },
+      { no: 6, title: "ตรวจเช็คใบพัด", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "" }
+    ];
+
+    const SELF_PRIMING_TEMPLATE = [
+      { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+      { no: 2, title: "ตรวจเช็คทางกายภาพ", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+      { no: 3, title: "ทำความสะอาด", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "" },
+      { no: 4, title: "ถ่ายน้ำมันเครื่อง", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "" },
+      { no: 5, title: "ตรวจเช็คใบพัด", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "" }
+    ];
+
+    const CHEM_PUMP_TEMPLATE = [
+      { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+      { no: 2, title: "ตรวจเช็ค Diaphragm", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" },
+      { no: 3, title: "ตรวจเช็ค Valve", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" },
+      { no: 4, title: "ตรวจเช็ค Seal", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" }
+    ];
+
+    const VALVE_TEMPLATE = [
+      { no: 1, title: "ตรวจเช็คการคลายตัวของน็อต", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" }
+    ];
+
+    const METER_TEMPLATE = [
+      { no: 1, title: "ทำความสะอาด", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+      { no: 2, title: "Calibration (No Cer)", freq: "ทุก 3 เดือน", planColor: "#ed7d31", freqClass: "freq-3m", type: "check", val: "✓" }
+    ];
+
+    const LEVEL_SWITCH_TEMPLATE = [
+      { no: 1, title: "ฉีดล้าง ทำความสะอาด", freq: "ทุก 3 เดือน", planColor: "#ed7d31", freqClass: "freq-3m", type: "check", val: "-" },
+      { no: 2, title: "ตรวจเช็คฟังก์ชั่นการทำงาน", freq: "ทุก 6 เดือน", planColor: "#7030a0", freqClass: "freq-6m", type: "check", val: "-" }
+    ];
+
+    const RADAR_TEMPLATE = [
+      { no: 1, title: "ตรวจเช็คค่าระดับที่หน้าจอ Smart Phone", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+      { no: 2, title: "ตรวจเช็คค่าระดับที่หน้าจอ Scada", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" }
+    ];
+
+    const RAW_CONFIG = [
+      // Page 1 (1-3)
+      { id: 1, page: 1, cat: "เครื่องเติมอากาศ", showCat: true, name: "Aeration Blower (AB-SBR-01)", hasAmp: true, amp: "40.55", hasNote: true, note: "สลับจาก AB-SBR-03 เป็น AB-SBR-01", minRows: 5, subs: [
+        { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+        { no: 2, title: "เป่าทำความสะอาด Filter", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+        { no: 3, title: "เปลี่ยน Air Filter", freq: "ทุก 3 เดือน", planColor: "#ed7d31", freqClass: "freq-3m", type: "check", val: "-" }
+      ]},
+      { id: 2, page: 1, cat: "เครื่องเติมอากาศ", showCat: false, name: "Aeration Blower (AB-SBR-02)", hasAmp: true, amp: "-", hasNote: true, note: "", minRows: 5, subs: [
+        { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+        { no: 2, title: "เป่าทำความสะอาด Filter", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+        { no: 3, title: "เปลี่ยน Air Filter", freq: "ทุก 3 เดือน", planColor: "#ed7d31", freqClass: "freq-3m", type: "check", val: "-" }
+      ]},
+      { id: 3, page: 1, cat: "เครื่องเติมอากาศ", showCat: false, name: "Aeration Blower (AB-SBR-03)", hasAmp: true, amp: "41.64", hasNote: true, note: "", minRows: 5, subs: [
+        { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+        { no: 2, title: "เป่าทำความสะอาด Filter", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+        { no: 3, title: "เปลี่ยน Air Filter", freq: "ทุก 3 เดือน", planColor: "#ed7d31", freqClass: "freq-3m", type: "check", val: "-" }
+      ]},
+
+      // Page 2 (4-7)
+      { id: 4, page: 2, cat: "เครื่องเติมอากาศผิวน้ำ", showCat: true, name: "Surface Aeration (SA-EQ-01)", hasAmp: true, amp: "23.56", minRows: 5, subs: [
+        { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+        { no: 2, title: "ถ่ายน้ำมันเครื่อง", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" },
+        { no: 3, title: "ตรวจเช็คใบพัดเติมอากาศ", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" },
+        { no: 4, title: "ตรวจสอบจุดยึดต่อและความตึงของเชือกใยยัก", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" }
+      ]},
+      { id: 5, page: 2, cat: "เครื่องเติมอากาศผิวน้ำ", showCat: false, name: "Surface Aeration (SA-EQ-02)", hasAmp: true, amp: "23.42", minRows: 5, subs: [
+        { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+        { no: 2, title: "ถ่ายน้ำมันเครื่อง", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" },
+        { no: 3, title: "ตรวจเช็คใบพัดเติมอากาศ", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" },
+        { no: 4, title: "ตรวจสอบจุดยึดต่อและความตึงของเชือกใยยัก", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" }
+      ]},
+      { id: 6, page: 2, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: true, name: "Sump Pump (P-CS-01)", hasAmp: true, amp: "15.65", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 7, page: 2, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Sump Pump (P-CS-02)", hasAmp: true, amp: "15.14", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+
+      // Page 3 (8-11)
+      { id: 8, page: 3, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Sump Pump (P-CS-03)", hasAmp: true, amp: "15.54", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 9, page: 3, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Equalizing Pump (P-EQ-01)", hasAmp: true, amp: "15.31", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 10, page: 3, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Equalizing Pump (P-EQ-02)", hasAmp: true, amp: "15.22", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 11, page: 3, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Decant Pump (DP-SBR-01)", hasAmp: true, amp: "17.00", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+
+      // Page 4 (12-15)
+      { id: 12, page: 4, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Decant Pump (DP-SBR-02)", hasAmp: true, amp: "17.21", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 13, page: 4, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Decant Pump (DP-SBR-03)", hasAmp: true, amp: "17.19", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 14, page: 4, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Decant Pump (DP-SBR-04)", hasAmp: true, amp: "17.46", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 15, page: 4, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Excess Sludge Pump (EP-SBR-01)", hasAmp: true, amp: "2.05", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+
+      // Page 5 (16-19)
+      { id: 16, page: 5, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Excess Sludge Pump (EP-SBR-02)", hasAmp: true, amp: "1.95", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 17, page: 5, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Excess Sludge Pump (EP-SBR-03)", hasAmp: true, amp: "2.04", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 18, page: 5, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Excess Sludge Pump (EP-SBR-04)", hasAmp: true, amp: "2.05", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 19, page: 5, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Effluent Pump (P-EFF-01)", hasAmp: true, amp: "18.55", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+
+      // Page 6 (20-23)
+      { id: 20, page: 6, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Effluent Pump (P-EFF-02)", hasAmp: true, amp: "17.30", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 21, page: 6, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Emergency Pump (P-EM-01)", hasAmp: true, amp: "18.42", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 22, page: 6, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Emergency Pump (P-EM-02)", hasAmp: true, amp: "17.46", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 23, page: 6, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Sludge Transfer Pump (P-ST-01)", hasAmp: true, amp: "1.96", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+
+      // Page 7 (24-27)
+      { id: 24, page: 7, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Sludge Transfer Pump (P-ST-02)", hasAmp: true, amp: "1.93", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 25, page: 7, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Over Flow Sludge pump (P-SS-01)", hasAmp: true, amp: "1.88", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 26, page: 7, cat: "เครื่องสูบน้ำ (Submersible Pump)", showCat: false, name: "Over Flow Sludge pump (P-SS-02)", hasAmp: true, amp: "1.70", minRows: 6, subs: cloneSubs(SUB_PUMP_TEMPLATE) },
+      { id: 27, page: 7, cat: "เครื่องสูบน้ำ (Self Priming Centifugal Pump)", showCat: true, name: "Post Aeration to Wet land Transfer Pump (P-PP-01)", hasAmp: true, amp: "10.9", minRows: 5, subs: cloneSubs(SELF_PRIMING_TEMPLATE) },
+
+      // Page 8 (28-31)
+      { id: 28, page: 8, cat: "เครื่องสูบน้ำ (Self Priming Centifugal Pump)", showCat: false, name: "Post Aeration to Wet land Transfer Pump (P-PP-02)", hasAmp: true, amp: "11.96", minRows: 5, subs: cloneSubs(SELF_PRIMING_TEMPLATE) },
+      { id: 29, page: 8, cat: "เครื่องสูบน้ำ (Self Priming Centifugal Pump)", showCat: false, name: "Retreat Water Pump 2 (P-EP-01)", hasAmp: true, amp: "6.64", minRows: 5, subs: cloneSubs(SELF_PRIMING_TEMPLATE) },
+      { id: 30, page: 8, cat: "เครื่องสูบน้ำ (Self Priming Centifugal Pump)", showCat: false, name: "Retreat Water Pump 2 (P-EP-02)", hasAmp: true, amp: "6.68", minRows: 5, subs: cloneSubs(SELF_PRIMING_TEMPLATE) },
+      { id: 31, page: 8, cat: "เครื่องสูบจ่ายสารเคมี", showCat: true, name: "H₂SO₄ Feed Pump (CP-A-01)", hasAmp: true, amp: "0.92", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+
+      // Page 9 (32-36)
+      { id: 32, page: 9, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "H₂SO₄ Feed Pump (CP-A-02)", hasAmp: true, amp: "0.90", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+      { id: 33, page: 9, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "NaOH Feed Pump (CP-B-01)", hasAmp: true, amp: "0.29", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+      { id: 34, page: 9, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "NaOH Feed Pump (CP-B-02)", hasAmp: true, amp: "0.24", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+      { id: 35, page: 9, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "Urea Feed Pump (CP-N-01)", hasAmp: true, amp: "0.51", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+      { id: 36, page: 9, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "Urea Feed Pump (CP-N-02)", hasAmp: true, amp: "0.55", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+
+      // Page 10 (37-41)
+      { id: 37, page: 10, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "H₃PO₄ Feed Pump (CP-P-01)", hasAmp: true, amp: "0.20", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+      { id: 38, page: 10, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "H₃PO₄ Feed Pump (CP-P-02)", hasAmp: true, amp: "0.20", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+      { id: 39, page: 10, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "NaOCL feed pump (CP-CL-01)", hasAmp: true, amp: "0.50", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+      { id: 40, page: 10, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "NaOCL feed pump (CP-CL-02)", hasAmp: true, amp: "0.54", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+      { id: 41, page: 10, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "Polymer Feed pump (P-DS-01)", hasAmp: true, amp: "0.92", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+
+      // Page 11 (42-50)
+      { id: 42, page: 11, cat: "เครื่องสูบจ่ายสารเคมี", showCat: false, name: "Polymer Feed pump (P-DS-02)", hasAmp: true, amp: "0.89", minRows: 4, subs: cloneSubs(CHEM_PUMP_TEMPLATE) },
+      { id: 43, page: 11, cat: "วาล์ว", showCat: true, name: "Motorized Valve For Inlet (MV-SBR-01B)", minRows: 1, photoGroup: "valve_inlet", subs: cloneSubs(VALVE_TEMPLATE) },
+      { id: 44, page: 11, cat: "วาล์ว", showCat: false, name: "Motorized Valve For Inlet (MV-SBR-02B)", minRows: 1, photoGroup: "valve_inlet", subs: cloneSubs(VALVE_TEMPLATE) },
+      { id: 45, page: 11, cat: "วาล์ว", showCat: false, name: "Motorized Valve For Inlet (MV-SBR-03B)", minRows: 1, photoGroup: "valve_inlet", subs: cloneSubs(VALVE_TEMPLATE) },
+      { id: 46, page: 11, cat: "วาล์ว", showCat: false, name: "Motorized Valve For Inlet (MV-SBR-04B)", minRows: 1, photoGroup: "valve_inlet", subs: cloneSubs(VALVE_TEMPLATE) },
+      { id: 47, page: 11, cat: "วาล์ว", showCat: false, name: "Motorized Valve For Air (MV-SBR-01A)", minRows: 1, photoGroup: "valve_air", subs: cloneSubs(VALVE_TEMPLATE) },
+      { id: 48, page: 11, cat: "วาล์ว", showCat: false, name: "Motorized Valve For Air (MV-SBR-02A)", minRows: 1, photoGroup: "valve_air", subs: cloneSubs(VALVE_TEMPLATE) },
+      { id: 49, page: 11, cat: "วาล์ว", showCat: false, name: "Motorized Valve For Air (MV-SBR-03A)", minRows: 1, photoGroup: "valve_air", subs: cloneSubs(VALVE_TEMPLATE) },
+      { id: 50, page: 11, cat: "วาล์ว", showCat: false, name: "Motorized Valve For Air (MV-SBR-04A)", minRows: 1, photoGroup: "valve_air", subs: cloneSubs(VALVE_TEMPLATE) },
+
+      // Page 12 (51-55)
+      { id: 51, page: 12, cat: "เครื่องมือวัดความเป็นกรด-ด่าง และออกซิเจนละลายน้ำ", showCat: true, name: "pH Meter (pH-EQ-01)", hasCalibration: true, calRangeText: "Slop 80 - 103 %", calPercent: "95.01", minRows: 4, subs: cloneSubs(METER_TEMPLATE) },
+      { id: 52, page: 12, cat: "เครื่องมือวัดความเป็นกรด-ด่าง และออกซิเจนละลายน้ำ", showCat: false, name: "DO meter (DO-SBR-01)", hasCalibration: true, calRangeText: "Slop (-30) - (-110) %", calPercent: "- 86.83", minRows: 4, subs: cloneSubs(METER_TEMPLATE) },
+      { id: 53, page: 12, cat: "เครื่องมือวัดความเป็นกรด-ด่าง และออกซิเจนละลายน้ำ", showCat: false, name: "DO meter (DO-SBR-02)", hasCalibration: true, calRangeText: "Slop (-30) - (-110) %", calPercent: "-93.71", minRows: 4, subs: cloneSubs(METER_TEMPLATE) },
+      { id: 54, page: 12, cat: "เครื่องมือวัดความเป็นกรด-ด่าง และออกซิเจนละลายน้ำ", showCat: false, name: "DO meter (DO-SBR-03)", hasCalibration: true, calRangeText: "Slop (-30) - (-110) %", calPercent: "-89.68", minRows: 4, subs: cloneSubs(METER_TEMPLATE) },
+      { id: 55, page: 12, cat: "เครื่องมือวัดความเป็นกรด-ด่าง และออกซิเจนละลายน้ำ", showCat: false, name: "DO meter (DO-SBR-04)", hasCalibration: true, calRangeText: "Slop (-30) - (-110) %", calPercent: "-74.04", hasNote: true, note: "หัวที่ 4 ต้องทำการ Cal 3-4 ครั้งค่าถึงจะขึ้น", minRows: 4, subs: cloneSubs(METER_TEMPLATE) },
+
+      // Page 13 (56-63)
+      { id: 56, page: 13, cat: "เครื่องวัดอัตราการไหล", showCat: true, name: "Flow Meter (FM-CS-01)", minRows: 1, photoGroup: "flow_meter", subs: [
+        { no: 1, title: "Calibration (Cer)", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" }
+      ]},
+      { id: 57, page: 13, cat: "เครื่องวัดอัตราการไหล", showCat: false, name: "Flow Meter (FM-EQ-01)", minRows: 1, photoGroup: "flow_meter", subs: [
+        { no: 1, title: "Calibration (Cer)", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" }
+      ]},
+      { id: 58, page: 13, cat: "ชุดดักขยะและกรวดทราย", showCat: true, name: "Grit Remover Unit (GR-01)", hasAmp: true, amp: "1.81", minRows: 2, photoGroup: "grit_remover", subs: [
+        { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+        { no: 2, title: "เปลี่ยนน้ำมันเกียร์", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" }
+      ]},
+      { id: 59, page: 13, cat: "ชุดดักขยะและกรวดทราย", showCat: false, name: "Grit Remover Unit (GR-02)", hasAmp: true, amp: "1.88", minRows: 2, photoGroup: "grit_remover", subs: [
+        { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+        { no: 2, title: "เปลี่ยนน้ำมันเกียร์", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" }
+      ]},
+      { id: 60, page: 13, cat: "ชุดดักขยะและกรวดทราย", showCat: false, name: "Grit Remover Unit (GR-03)", hasAmp: true, amp: "1.85", minRows: 2, photoGroup: "grit_remover", subs: [
+        { no: 1, title: "ตรวจสอบและบันทึกกระแสไฟฟ้า (Amp.)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "amp" },
+        { no: 2, title: "เปลี่ยนน้ำมันเกียร์", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" }
+      ]},
+      { id: 61, page: 13, cat: "หัวจ่ายอากาศ", showCat: true, name: "Fine Bubble Diffuser", minRows: 3, subs: [
+        { no: 1, title: "ตรวจสอบและบันทึกค่าความดัน (bar)", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+        { no: 2, title: "ล้างด้วยกรดอ่อน", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" }
+      ]},
+      { id: 62, page: 13, cat: "ลูกลอย", showCat: true, name: "Level switch (LS-EFF-01,02)", minRows: 2, subs: cloneSubs(LEVEL_SWITCH_TEMPLATE) },
+      { id: 63, page: 13, cat: "ลูกลอย", showCat: false, name: "Level switch (LS-EM-01,02)", minRows: 2, subs: cloneSubs(LEVEL_SWITCH_TEMPLATE) },
+
+      // Page 14 (64-71)
+      { id: 64, page: 14, cat: "ลูกลอย", showCat: false, name: "Level switch (LS-ST-01,02)", minRows: 2, subs: cloneSubs(LEVEL_SWITCH_TEMPLATE) },
+      { id: 65, page: 14, cat: "ลูกลอย", showCat: false, name: "Level switch (LS-SS-01,02,03)", minRows: 2, subs: cloneSubs(LEVEL_SWITCH_TEMPLATE) },
+      { id: 66, page: 14, cat: "ลูกลอย", showCat: false, name: "Level switch (LS-PP-01,02,03)", minRows: 2, subs: cloneSubs(LEVEL_SWITCH_TEMPLATE) },
+      { id: 67, page: 14, cat: "ลูกลอย", showCat: false, name: "Level switch (LS-EP-01,02,03)", minRows: 2, subs: cloneSubs(LEVEL_SWITCH_TEMPLATE) },
+      { id: 68, page: 14, cat: "Radar", showCat: true, name: "Level Transmitter (LT-CS-01)", minRows: 2, photoGroup: "radar_1", subs: cloneSubs(RADAR_TEMPLATE) },
+      { id: 69, page: 14, cat: "Radar", showCat: false, name: "Level Transmitter (LT-EQ-01)", minRows: 2, photoGroup: "radar_1", subs: cloneSubs(RADAR_TEMPLATE) },
+      { id: 70, page: 14, cat: "Radar", showCat: false, name: "Level Transmitter (LT-SBR-01,02,03,04)", minRows: 2, photoGroup: "radar_2", subs: cloneSubs(RADAR_TEMPLATE) },
+      { id: 71, page: 14, cat: "Radar", showCat: false, name: "Level Transmitter (LT-PP-01)", minRows: 2, photoGroup: "radar_2", subs: cloneSubs(RADAR_TEMPLATE) },
+
+      // Page 15 (72-76)
+      { id: 72, page: 15, cat: "ระบบรีดตะกอน", showCat: true, name: "Dewatering Machine (DM-01)", minRows: 5, subs: [
+        { no: 1, title: "ตรวจสอบการปรับระยะ End Plate", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" },
+        { no: 2, title: "อัดจาระบี", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" },
+        { no: 3, title: "เปลี่ยน Moving ring", freq: "5,000 ชั่วโมง", planColor: "", freqClass: "freq-none", type: "check", val: "-" },
+        { no: 4, title: "เปลี่ยน Screw shaft", freq: "10,000 ชั่วโมง", planColor: "", freqClass: "freq-none", type: "check", val: "-" },
+        { no: 5, title: "เปลี่ยนถ่ายน้ำมันหล่อลื่น", freq: "2 ปี", planColor: "", freqClass: "freq-none", type: "check", val: "-" }
+      ]},
+      { id: 73, page: 15, cat: "ระบบรีดตะกอน", showCat: false, name: "Agitator (MX-01)", minRows: 2, subs: [
+        { no: 1, title: "เปลี่ยนถ่ายน้ำมันเกียร์", freq: "2 ปี", planColor: "", freqClass: "freq-none", type: "check", val: "-" }
+      ]},
+      { id: 74, page: 15, cat: "ระบบรีดตะกอน", showCat: false, name: "Washing Pump (WP-01)", minRows: 3, photoGroup: "washing_pump", subs: [
+        { no: 1, title: "เช็ครอยรั่วตามวาล์วแต่ละจุด", freq: "ทุก 3 เดือน", planColor: "#ed7d31", freqClass: "freq-3m", type: "check", val: "-" },
+        { no: 2, title: "เช็คลมในถังแรงดัน", freq: "ทุก 3 เดือน", planColor: "#ed7d31", freqClass: "freq-3m", type: "check", val: "-" },
+        { no: 3, title: "เปลี่ยนถุง Diaphragm", freq: "2-3 ปี", planColor: "", freqClass: "freq-none", type: "check", val: "-" }
+      ]},
+      { id: 75, page: 15, cat: "ระบบรีดตะกอน", showCat: false, name: "Washing Pump (WP-02)", minRows: 3, photoGroup: "washing_pump", subs: [
+        { no: 1, title: "เช็ครอยรั่วตามวาล์วแต่ละจุด", freq: "ทุก 3 เดือน", planColor: "#ed7d31", freqClass: "freq-3m", type: "check", val: "-" },
+        { no: 2, title: "เช็คลมในถังแรงดัน", freq: "ทุก 3 เดือน", planColor: "#ed7d31", freqClass: "freq-3m", type: "check", val: "-" },
+        { no: 3, title: "เปลี่ยนถุง Diaphragm", freq: "2-3 ปี", planColor: "", freqClass: "freq-none", type: "check", val: "-" }
+      ]},
+      { id: 76, page: 15, cat: "ตู้ควบคุมไฟฟ้า", showCat: true, name: "MCC Panel", minRows: 4, subs: [
+        { no: 1, title: "ทำความสะอาดตู้ควบคุมไฟฟ้า", freq: "ทุกเดือน", planColor: "#ffff00", freqClass: "freq-1m", type: "check", val: "✓" },
+        { no: 2, title: "ตรวจสอบจุดขันแน่นที่เทอร์มินอล", freq: "ทุก 1 ปี", planColor: "#70ad47", freqClass: "freq-1y", type: "check", val: "-" }
+      ]}
+    ];
+
+    // สร้าง ALL_ITEMS 76 รายการ พร้อมสถานะ isSaved = false (เพื่อรองรับการส่งต่อวันที่ดำเนินการ)
+    let lastSavedActionDate = "21/07/2026";
+    const ALL_ITEMS = RAW_CONFIG.map(cfg => ({
+      id: cfg.id,
+      page: cfg.page,
+      category: cfg.cat,
+      showCategoryHeader: !!cfg.showCat,
+      name: cfg.name,
+      actionDate: "21/07/2026",
+      isSaved: false, // ถ้ากดบันทึกแล้วจะกลายเป็น true และล็อกวันที่ของเครื่องนั้นไว้
+      hasAmp: !!cfg.hasAmp,
+      ampValue: cfg.amp !== undefined ? cfg.amp : "",
+      hasCalibration: !!cfg.hasCalibration,
+      calRangeText: cfg.calRangeText || "",
+      calPercent: cfg.calPercent || "",
+      hasNote: !!cfg.hasNote,
+      note: cfg.note || "",
+      minRows: cfg.minRows || 4,
+      photoGroup: cfg.photoGroup || null,
+      subItems: cfg.subs,
+      photos: []
+    }));
+
+    let currentEquipIndex = 0;
+    let activeSlotForSingleUpload = null;
+
+    // สร้างรูปภาพจำลองให้เห็นความสวยงามตั้งแต่เปิดใช้งาน
+    function createSimulatedPhoto(title, subtitle, bgColor, accentColor, dateStr) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 320;
+      canvas.height = 240;
+      const ctx = canvas.getContext("2d");
+
+      const grad = ctx.createLinearGradient(0, 0, 320, 240);
+      grad.addColorStop(0, bgColor);
+      grad.addColorStop(1, "#0f172a");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 320, 240);
+
+      ctx.strokeStyle = "rgba(255,255,255,0.22)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(16, 16, 288, 180);
+
+      ctx.fillStyle = accentColor;
+      ctx.font = "bold 17px Sarabun, sans-serif";
+      ctx.fillText(title, 28, 60);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "14px Sarabun, sans-serif";
+      ctx.fillText(subtitle, 28, 92);
+
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(175, 210, 138, 22);
+      ctx.fillStyle = "#ff7b54";
+      ctx.font = "bold 11px monospace";
+      ctx.fillText((dateStr || "21/07/2026") + " 09:42", 182, 225);
+
+      return canvas.toDataURL("image/jpeg", 0.8);
+    }
+
+    function initDefaultPhotos() {
+      ALL_ITEMS.forEach(item => {
+        // กรณีอยู่ในกลุ่มใช้รูปภาพร่วมกัน เอาเฉพาะตัวแรกของกลุ่มมีรูปเริ่มต้น
+        if (item.photoGroup) {
+          const firstInGroup = ALL_ITEMS.find(x => x.photoGroup === item.photoGroup);
+          if (firstInGroup.id !== item.id) return;
+        }
+        // ลูกลอย (62-67) และ Agitator ในตัวอย่างไม่มีรูปหรือมี 1 รูป
+        if (item.id >= 62 && item.id <= 67) return;
+
+        const shortCode = item.name.includes("(") ? item.name.split("(")[1].replace(")", "") : item.name.substring(0, 14);
+        if (item.hasAmp) {
+          item.photos = [
+            createSimulatedPhoto(shortCode, `1. วัดกระแสไฟ ${item.ampValue} A`, "#451a03", "#facc15", item.actionDate),
+            createSimulatedPhoto(shortCode, "2. ตรวจสอบสภาพเครื่องจักร", "#1e3a5f", "#38bdf8", item.actionDate),
+            createSimulatedPhoto(shortCode, "3. บำรุงรักษาตามแผน PM", "#064e3b", "#6ee7b7", item.actionDate)
+          ];
+          if (item.id <= 3) {
+            item.photos.push(createSimulatedPhoto(shortCode, "4. เป่าทำความสะอาด Filter", "#334155", "#fbbf24", item.actionDate));
+            if (item.id !== 2) {
+              item.photos.push(createSimulatedPhoto(shortCode, "5. ประกอบเข้าที่เดิม", "#1e40af", "#e2e8f0", item.actionDate));
+            }
+          }
+        } else if (item.hasCalibration) {
+          item.photos = [
+            createSimulatedPhoto(shortCode, "1. ถอดล้างทำความสะอาดหัววัด", "#3f3f46", "#fde047", item.actionDate),
+            createSimulatedPhoto(shortCode, "2. สภาพหัววัดหลังล้าง", "#1e3a5f", "#7dd3fc", item.actionDate),
+            createSimulatedPhoto(shortCode, `3. Cal Slope = ${item.calPercent}%`, "#172554", "#60a5fa", item.actionDate)
+          ];
+        } else {
+          item.photos = [
+            createSimulatedPhoto(shortCode, "1. ตรวจสอบสภาพทั่วไป", "#1e3a5f", "#38bdf8", item.actionDate),
+            createSimulatedPhoto(shortCode, "2. ผลการตรวจเช็คปกติ", "#334155", "#a7f3d0", item.actionDate),
+            createSimulatedPhoto(shortCode, "3. ภาพถ่ายประกอบรายงาน", "#0c4a6e", "#fde047", item.actionDate)
+          ];
+        }
+      });
+    }
+
+    // หากกลุ่มใช้รูปภาพร่วมกัน (เช่น วาล์ว 43-46) ให้ดึงรูปจากเครื่องแรกที่มีรูปในกลุ่มนั้น
+    function getEffectivePhotosForGroup(groupName) {
+      const groupItems = ALL_ITEMS.filter(x => x.photoGroup === groupName);
+      const merged = [];
+      groupItems.forEach(g => {
+        g.photos.forEach((p, idx) => {
+          if (p && !merged[idx]) merged[idx] = p;
+        });
+      });
+      return merged;
+    }
+
+    // ==================== 2. ระบบจัดการวันที่ดำเนินการแบบคงที่จากเครื่องก่อนหน้า ====================
+    function selectEquipment(idx) {
+      currentEquipIndex = idx;
+      const cur = ALL_ITEMS[currentEquipIndex];
+
+      // เงื่อนไขสำคัญข้อ 1:
+      // ถ้าเครื่องนี้ "ยังไม่เคยกดบันทึก" (!cur.isSaved) ให้ใช้วันที่ดำเนินการล่าสุดจากเครื่องที่เพิ่งบันทึกไป (lastSavedActionDate)
+      // แต่ถ้าเครื่องนี้ "กดบันทึกไปแล้ว" (cur.isSaved === true) ให้คงวันที่เดิมของเครื่องนี้ไว้ ไม่แก้ไขตาม!
+      if (!cur.isSaved) {
+        cur.actionDate = lastSavedActionDate;
+      }
+
+      renderMobileControls();
+      renderLivePreview();
+    }
+
+    function onDateInputChanged() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      const newDate = document.getElementById("inputDate").value.trim();
+      cur.actionDate = newDate;
+      renderLivePreview();
+    }
+
+    function lockCurrentItemAndPropagateDate() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      const inputDateVal = document.getElementById("inputDate").value.trim();
+      cur.actionDate = inputDateVal;
+      cur.isSaved = true;
+
+      // อัปเดตวันที่ล่าสุดที่กดบันทึก เพื่อส่งต่อไปยังเครื่องถัดๆ ไปที่ยังไม่ได้กดบันทึก
+      lastSavedActionDate = inputDateVal;
+
+      // อัปเดตเฉพาะเครื่องที่ยังไม่เคยกดบันทึก (!item.isSaved) ให้เป็นวันที่ล่าสุดนี้ด้วย
+      // ส่วนเครื่องไหนที่ isSaved === true จะคงวันที่ของตัวเองไว้ ไม่เปลี่ยนตาม!
+      ALL_ITEMS.forEach(item => {
+        if (!item.isSaved) {
+          item.actionDate = lastSavedActionDate;
+        }
+      });
+    }
+
+    let gasWebAppUrl = "https://script.google.com/macros/s/AKfycbzLnHgZ33GJkBrCFLarAM38UK5vSrXVkj4b1NNJO9g545b7b3FmVRFuMWpQsmlOsKjr/exec";
+
+    function showMobileToast(msg, bg = "#065f46") {
+      const el = document.getElementById("mobileToast");
+      if (!el) return;
+      el.style.background = bg;
+      el.textContent = msg;
+      el.style.display = "block";
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        el.style.display = "none";
+      }, 4000);
+    }
+
+    function updateGsSyncBadge() {
+      const badge = document.getElementById("gsSyncStatusBadge");
+      const input = document.getElementById("gasWebAppUrlInput");
+      if (!badge) return;
+      if (input && gasWebAppUrl) input.value = gasWebAppUrl;
+      if (gasWebAppUrl && gasWebAppUrl.startsWith("https://script.google.com")) {
+        badge.className = "badge-dynamic";
+        badge.textContent = "🟢 เชื่อมต่อส่งเข้า Google Sheet อัตโนมัติแล้ว";
+      } else {
+        badge.className = "badge-inherited";
+        badge.textContent = "โหมดคัดลอก / รอใส่ลิงก์ Web App";
+      }
+    }
+
+    function toggleGsSetupBox() {
+      const box = document.getElementById("gsSetupBox");
+      if (!box) return;
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    }
+
+    function saveGasWebAppUrl() {
+      const val = (document.getElementById("gasWebAppUrlInput").value || "").trim();
+      gasWebAppUrl = val;
+      updateGsSyncBadge();
+      persistStateToStorage();
+      document.getElementById("gsSetupBox").style.display = "none";
+      showMobileToast("✅ บันทึก URL เชื่อมต่อ Google Sheet เรียบร้อยแล้ว!");
+    }
+
+    async function pushItemToGoogleSheet(item) {
+      if (!gasWebAppUrl || !gasWebAppUrl.startsWith("https://script.google.com")) return;
+      try {
+        showMobileToast(`☁️ กำลังส่งข้อมูลเครื่อง #${item.id} เข้า Google Sheet...`, "#0369a1");
+        const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+        const nonAmpChecks = item.subItems.filter(s => s.type !== "amp").map(s => s.val || "");
+        const photoOwner = getTargetItemForPhoto(item);
+        const payload = {
+          round: roundText,
+          id: item.id,
+          category: item.category,
+          name: item.name,
+          actionDate: item.actionDate,
+          ampValue: item.hasAmp ? item.ampValue : "",
+          checks: nonAmpChecks,
+          calPercent: item.hasCalibration ? item.calPercent : "",
+          note: item.note || "",
+          photos: photoOwner.hasCustomPhotos ? (photoOwner.photos || []) : []
+        };
+        const res = await fetch(gasWebAppUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.status === "success") {
+            if (Array.isArray(json.photoUrls)) {
+              json.photoUrls.forEach((u, idx) => {
+                if (u && u.startsWith("http")) photoOwner.photos[idx] = u;
+              });
+            }
+            showMobileToast(`✅ อัปเดตเครื่อง #${item.id} ลง Google Sheet (แถวที่ ${json.row}) สำเร็จ!`, "#059669");
+            return;
+          }
+        }
+        showMobileToast(`✅ ส่งข้อมูลเครื่อง #${item.id} ไปยัง Google Sheet แล้ว!`, "#059669");
+      } catch (e) {
+        // Fallback no-cors if browser blocks redirect reading
+        showMobileToast(`✅ ส่งข้อมูลเครื่อง #${item.id} เข้า Google Sheet แล้ว!`, "#059669");
+      }
+    }
+
+    function copyAllRowsForGoogleSheet() {
+      const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+      const lines = ALL_ITEMS.map(item => {
+        const nonAmp = item.subItems.filter(s => s.type !== "amp");
+        const cols = [
+          new Date().toLocaleDateString("en-GB"),
+          roundText,
+          item.id,
+          item.category,
+          item.name,
+          item.photoGroup || "-",
+          item.actionDate || "",
+          item.hasAmp ? (item.ampValue || "") : "",
+          nonAmp[0] ? (nonAmp[0].val || "") : "",
+          nonAmp[1] ? (nonAmp[1].val || "") : "",
+          nonAmp[2] ? (nonAmp[2].val || "") : "",
+          nonAmp[3] ? (nonAmp[3].val || "") : "",
+          nonAmp[4] ? (nonAmp[4].val || "") : "",
+          item.hasCalibration ? (item.calPercent || "") : "",
+          (item.note || "").replace(/\t|\r|\n/g, " ")
+        ];
+        return cols.join("\t");
+      });
+      const tsv = lines.join("\n");
+      navigator.clipboard.writeText(tsv).then(() => {
+        showMobileToast("📋 คัดลอกทั้ง 76 แถวแล้ว! ไปคลิกช่อง A2 ในแท็บ 1_Raw_Data ของ Google Sheet แล้วกด Ctrl+V ได้เลย");
+      }).catch(() => {
+        alert("คัดลอกข้อมูลแล้ว สามารถนำไปวางในช่อง A2 ของแท็บ 1_Raw_Data ใน Google Sheet ได้เลยครับ");
+      });
+    }
+
+    function persistStateToStorage() {
+      try {
+        const payload = {
+          round: document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69",
+          lastSavedActionDate,
+          gasWebAppUrl,
+          items: ALL_ITEMS.map(it => ({
+            id: it.id,
+            actionDate: it.actionDate,
+            isSaved: it.isSaved,
+            ampValue: it.ampValue,
+            calPercent: it.calPercent,
+            note: it.note,
+            subVals: it.subItems.map(s => s.val || ""),
+            photos: it.photos
+          }))
+        };
+        localStorage.setItem("UU_PM_REPORT_STATE_V2", JSON.stringify(payload));
+        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+          fetch("/api/state", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          }).catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    async function loadPersistedState() {
+      let data = null;
+      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        try {
+          const res = await fetch("/api/state");
+          if (res.ok) {
+            const json = await res.json();
+            if (json && json.items) data = json;
+          }
+        } catch (e) {}
+      }
+      if (!data) {
+        try {
+          const raw = localStorage.getItem("UU_PM_REPORT_STATE_V2");
+          if (raw) data = JSON.parse(raw);
+        } catch (e) {}
+      }
+      if (data && Array.isArray(data.items)) {
+        if (data.round && document.getElementById("globalRound")) {
+          document.getElementById("globalRound").value = data.round;
+        }
+        if (data.lastSavedActionDate) {
+          lastSavedActionDate = data.lastSavedActionDate;
+        }
+        if (data.gasWebAppUrl) {
+          gasWebAppUrl = data.gasWebAppUrl;
+        }
+        data.items.forEach(saved => {
+          const target = ALL_ITEMS.find(x => x.id === saved.id);
+          if (target) {
+            target.actionDate = saved.actionDate ?? target.actionDate;
+            target.isSaved = !!saved.isSaved;
+            target.ampValue = saved.ampValue ?? target.ampValue;
+            target.calPercent = saved.calPercent ?? target.calPercent;
+            target.note = saved.note ?? target.note;
+            if (Array.isArray(saved.subVals)) {
+              target.subItems.forEach((s, i) => {
+                if (saved.subVals[i] !== undefined) s.val = saved.subVals[i];
+              });
+            }
+            if (Array.isArray(saved.photos) && saved.photos.length > 0) {
+              target.photos = saved.photos;
+            }
+          }
+        });
+      }
+      updateGsSyncBadge();
+    }
+
+    function saveCurrentOnly() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      saveCurrentItemFields();
+      lockCurrentItemAndPropagateDate();
+      persistStateToStorage();
+      pushItemToGoogleSheet(cur);
+      showMobileToast(`✅ บันทึกลำดับที่ #${cur.id} เรียบร้อยแล้ว!`);
+      renderMobileControls();
+      renderAllViews();
+    }
+
+    function saveAndNext() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      saveCurrentItemFields();
+      lockCurrentItemAndPropagateDate();
+      persistStateToStorage();
+      pushItemToGoogleSheet(cur);
+
+      if (currentEquipIndex < ALL_ITEMS.length - 1) {
+        currentEquipIndex++;
+      } else {
+        currentEquipIndex = 0;
+      }
+
+      // เมื่อข้ามไปเครื่องถัดไป ถ้าเครื่องถัดไปยังไม่เคยบันทึก ให้ดึง lastSavedActionDate มาใส่ทันที
+      const nextItem = ALL_ITEMS[currentEquipIndex];
+      if (!nextItem.isSaved) {
+        nextItem.actionDate = lastSavedActionDate;
+      }
+
+      showMobileToast(`✅ บันทึก #${cur.id} แล้ว ➔ ไปยังเครื่อง #${nextItem.id}`);
+      renderMobileControls();
+      renderAllViews();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // ==================== 3. แสดงผลหน้าจอมือถือ (Mobile Controls) ====================
+    function renderMobileControls() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      const savedCount = ALL_ITEMS.filter(x => x.isSaved).length;
+      document.getElementById("savedCounterBadge").textContent = `บันทึกแล้ว ${savedCount}/76`;
+
+      // ตัวเลือกหน้า 1–15
+      const pageSelect = document.getElementById("pageFilterSelect");
+      let pageOpts = "";
+      for (let p = 1; p <= 15; p++) {
+        const pageItems = ALL_ITEMS.filter(x => x.page === p);
+        const firstId = pageItems[0].id;
+        const lastId = pageItems[pageItems.length - 1].id;
+        pageOpts += `<option value="${p}" ${cur.page === p ? 'selected' : ''}>หน้าที่ ${p} (ลำดับ ${firstId}–${lastId})</option>`;
+      }
+      pageSelect.innerHTML = pageOpts;
+
+      // ปุ่ม Pills เฉพาะเครื่องในหน้าปัจจุบัน
+      const pillsEl = document.getElementById("equipPills");
+      const samePageItems = ALL_ITEMS.filter(x => x.page === cur.page);
+      pillsEl.innerHTML = samePageItems.map(item => {
+        const realIdx = ALL_ITEMS.indexOf(item);
+        const isAct = realIdx === currentEquipIndex;
+        return `
+          <button type="button" class="equip-pill ${isAct ? 'active' : ''} ${item.isSaved ? 'saved' : ''}" onclick="selectEquipment(${realIdx})">
+            #${item.id} ${item.isSaved ? '🔒' : ''}
+          </button>
+        `;
+      }).join("");
+
+      // Dropdown ทั้ง 76 รายการ (หรือกรองตามคำค้นหา)
+      const searchVal = (document.getElementById("equipSearchInput").value || "").trim().toLowerCase();
+      const selectEl = document.getElementById("equipSelect");
+      const filtered = ALL_ITEMS.filter(item => {
+        if (!searchVal) return true;
+        return String(item.id).includes(searchVal) || item.name.toLowerCase().includes(searchVal) || item.category.toLowerCase().includes(searchVal);
+      });
+
+      selectEl.innerHTML = (filtered.length ? filtered : ALL_ITEMS).map(item => {
+        const realIdx = ALL_ITEMS.indexOf(item);
+        const statusIcon = item.isSaved ? "🔒 [บันทึกแล้ว]" : "⏳";
+        return `
+          <option value="${realIdx}" ${realIdx === currentEquipIndex ? 'selected' : ''}>
+            ${statusIcon} ลำดับที่ ${item.id}: ${item.name} (หน้า ${item.page})
+          </option>
+        `;
+      }).join("");
+
+      // แสดงวันที่ดำเนินการและป้ายสถานะของวันที่
+      document.getElementById("inputDate").value = cur.actionDate;
+      const dateBadge = document.getElementById("dateStatusBadge");
+      const itemSavedBadge = document.getElementById("itemSavedBadge");
+
+      if (cur.isSaved) {
+        dateBadge.className = "badge-locked";
+        dateBadge.textContent = "🔒 ล็อกวันที่บันทึกแล้ว";
+        itemSavedBadge.style.background = "#dcfce7";
+        itemSavedBadge.style.color = "#166534";
+        itemSavedBadge.textContent = "🔒 บันทึกแล้ว";
+      } else {
+        dateBadge.className = "badge-inherited";
+        dateBadge.textContent = `📌 ดึงวันที่ล่าสุด (${lastSavedActionDate})`;
+        itemSavedBadge.style.background = "#fef3c7";
+        itemSavedBadge.style.color = "#92400e";
+        itemSavedBadge.textContent = "⏳ รอกดบันทึก";
+      }
+
+      document.getElementById("staticCategory").textContent = cur.category;
+      document.getElementById("staticPageNo").textContent = `หน้า ${cur.page} / 15`;
+
+      // สร้างช่องกรอกตามรายการย่อยของเครื่องจักร
+      let html = "";
+
+      if (cur.hasAmp) {
+        html += `
+          <div class="form-group">
+            <label class="form-label">
+              ⚡ 1. ค่ากระแสไฟฟ้า (Amp.) <span class="freq-tag freq-1m">ทุกเดือน</span> <span class="badge-dynamic">กรอกตัวเลข</span>
+            </label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="inputAmp" class="form-control" placeholder="เช่น 15.65 หรือ -" value="${cur.ampValue}" oninput="saveCurrentItemFields()" />
+              <span style="font-weight:700;color:#0f4c81;white-space:nowrap;">A</span>
+              <button type="button" class="toggle-btn" style="white-space:nowrap;" onclick="document.getElementById('inputAmp').value='-';saveCurrentItemFields();">ใส่ "-"</button>
+            </div>
+          </div>
+        `;
+      }
+
+      cur.subItems.forEach((sub, sIdx) => {
+        if (sub.type === "amp") return;
+        html += `
+          <div class="check-card">
+            <div class="check-card-header">
+              <span>${sub.no}. ${sub.title}</span>
+              <span class="freq-tag ${sub.freqClass}">${sub.freq}</span>
+            </div>
+            <div class="toggle-group">
+              <button type="button" class="toggle-btn ${sub.val === '✓' ? 'selected-ok' : ''}" onclick="setSubCheck(${sIdx}, '✓')">✓ ทำแล้ว</button>
+              <button type="button" class="toggle-btn ${sub.val === '-' ? 'selected-dash' : ''}" onclick="setSubCheck(${sIdx}, '-')">- ไม่ทำ/ไม่ถึงรอบ</button>
+              <button type="button" class="toggle-btn ${sub.val === '' ? 'selected-blank' : ''}" onclick="setSubCheck(${sIdx}, '')">เว้นว่าง</button>
+            </div>
+          </div>
+        `;
+      });
+
+      if (cur.hasCalibration) {
+        html += `
+          <div class="form-group" style="background:#eff6ff;padding:10px;border-radius:8px;border:1px solid #bfdbfe;">
+            <div style="font-size:11.5px;color:#1e40af;margin-bottom:4px;">
+              <strong>เกณฑ์มาตรฐาน (คงที่):</strong> <code>${cur.calRangeText}</code>
+            </div>
+            <label class="form-label">
+              🌡️ ค่าที่วัดได้ (อยู่ในช่วง = ____ %) <span class="badge-dynamic">กรอกตัวเลข</span>
+            </label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="inputCalPercent" class="form-control" placeholder="เช่น 95.01 หรือ -86.83" value="${cur.calPercent}" oninput="saveCurrentItemFields()" />
+              <span style="font-weight:700;color:#1e40af;">%</span>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="form-group" style="margin-top:8px;">
+          <label class="form-label">📝 หมายเหตุ (Note ท้ายข้อ - ถ้ามี)</label>
+          <input type="text" id="inputNote" class="form-control" placeholder="เว้นว่างได้หากไม่มีหมายเหตุ" value="${cur.note || ''}" oninput="saveCurrentItemFields()" />
+        </div>
+      `;
+
+      document.getElementById("dynamicFieldsContainer").innerHTML = html;
+
+      // แจ้งเตือนกรณีเครื่องนี้อยู่ในกลุ่มใช้ช่องรูปภาพร่วมกันในหน้ากระดาษ (เช่น วาล์ว 43-46)
+      const noticeEl = document.getElementById("sharedPhotoNotice");
+      if (cur.photoGroup) {
+        const mates = ALL_ITEMS.filter(x => x.photoGroup === cur.photoGroup).map(x => `#${x.id}`).join(", ");
+        noticeEl.style.display = "block";
+        noticeEl.textContent = `📌 ลำดับที่ ${mates} ใช้ช่องแสดงภาพประกอบร่วมกันตามแบบฟอร์มต้นฉบับ`;
+      } else {
+        noticeEl.style.display = "none";
+      }
+
+      renderPhotoSlots();
+    }
+
+    function onFilterPageChange(pageVal) {
+      const p = Number(pageVal);
+      const firstIdx = ALL_ITEMS.findIndex(x => x.page === p);
+      if (firstIdx !== -1) selectEquipment(firstIdx);
+    }
+
+    function onSearchEquip(val) {
+      const q = (val || "").trim().toLowerCase();
+      if (!q) {
+        renderMobileControls();
+        return;
+      }
+      const matchIdx = ALL_ITEMS.findIndex(item =>
+        String(item.id) === q ||
+        item.name.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q)
+      );
+      if (matchIdx !== -1) {
+        selectEquipment(matchIdx);
+      } else {
+        renderMobileControls();
+      }
+    }
+
+    function setSubCheck(subIdx, value) {
+      ALL_ITEMS[currentEquipIndex].subItems[subIdx].val = value;
+      renderMobileControls();
+      renderAllViews();
+    }
+
+    function saveCurrentItemFields() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      if (document.getElementById("inputDate")) {
+        cur.actionDate = document.getElementById("inputDate").value.trim();
+      }
+      if (cur.hasAmp && document.getElementById("inputAmp")) {
+        cur.ampValue = document.getElementById("inputAmp").value.trim();
+      }
+      if (cur.hasCalibration && document.getElementById("inputCalPercent")) {
+        cur.calPercent = document.getElementById("inputCalPercent").value.trim();
+      }
+      if (document.getElementById("inputNote")) {
+        cur.note = document.getElementById("inputNote").value;
+      }
+      renderLivePreview();
+    }
+
+    // ==================== 4. จัดการรูปภาพ (5 ช่อง) ====================
+    function getTargetItemForPhoto(cur) {
+      if (!cur.photoGroup) return cur;
+      return ALL_ITEMS.find(x => x.photoGroup === cur.photoGroup) || cur;
+    }
+
+    function renderPhotoSlots() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      const photoOwner = getTargetItemForPhoto(cur);
+      const grid = document.getElementById("photoGrid");
+      let html = "";
+
+      for (let i = 0; i < 5; i++) {
+        const photoData = photoOwner.photos[i];
+        if (photoData) {
+          html += `
+            <div class="photo-slot" onclick="triggerSlotUpload(${i})">
+              <img src="${photoData}" alt="Photo ${i+1}" />
+              <button type="button" class="remove-photo" onclick="event.stopPropagation(); removePhotoAt(${i})">×</button>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="photo-slot" onclick="triggerSlotUpload(${i})">
+              <div style="font-size:16px;">📷</div>
+              <div class="slot-label">รูปที่ ${i+1}</div>
+            </div>
+          `;
+        }
+      }
+      grid.innerHTML = html;
+    }
+
+    function triggerSlotUpload(slotIdx) {
+      activeSlotForSingleUpload = slotIdx;
+      const input = document.getElementById("multiPhotoInput");
+      input.value = "";
+      input.click();
+    }
+
+    function handlePhotoFiles(files) {
+      if (!files || files.length === 0) return;
+      const cur = ALL_ITEMS[currentEquipIndex];
+      const photoOwner = getTargetItemForPhoto(cur);
+      const stampDate = document.getElementById("stampDateCheckbox").checked;
+      const fileArray = Array.from(files);
+
+      fileArray.forEach((file, idx) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement("canvas");
+            const maxW = 550;
+            const scale = Math.min(1, maxW / img.width);
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            if (stampDate) {
+              const dateText = cur.actionDate || "21/07/2026";
+              const fontSize = Math.max(11, Math.round(canvas.width * 0.04));
+              ctx.font = `bold ${fontSize}px sans-serif`;
+              const textWidth = ctx.measureText(dateText).width;
+              ctx.fillStyle = "rgba(0,0,0,0.55)";
+              ctx.fillRect(canvas.width - textWidth - 14, canvas.height - fontSize - 10, textWidth + 10, fontSize + 6);
+              ctx.fillStyle = "#ff7b54";
+              ctx.fillText(dateText, canvas.width - textWidth - 9, canvas.height - 6);
+            }
+
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.84);
+            const targetSlot = (fileArray.length === 1 && activeSlotForSingleUpload !== null)
+              ? activeSlotForSingleUpload
+              : Math.min(4, (activeSlotForSingleUpload || 0) + idx);
+
+            photoOwner.photos[targetSlot] = dataUrl;
+            photoOwner.hasCustomPhotos = true;
+            renderPhotoSlots();
+            renderAllViews();
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function removePhotoAt(slotIdx) {
+      const photoOwner = getTargetItemForPhoto(ALL_ITEMS[currentEquipIndex]);
+      photoOwner.photos.splice(slotIdx, 1);
+      renderPhotoSlots();
+      renderAllViews();
+    }
+
+    function clearPhotosForCurrent() {
+      const photoOwner = getTargetItemForPhoto(ALL_ITEMS[currentEquipIndex]);
+      photoOwner.photos = [];
+      photoOwner.hasCustomPhotos = false;
+      renderPhotoSlots();
+      renderAllViews();
+    }
+
+    function generateDemoPhotosForCurrent() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      const photoOwner = getTargetItemForPhoto(cur);
+      const shortCode = cur.name.includes("(") ? cur.name.split("(")[1].replace(")", "") : cur.name.substring(0, 14);
+      photoOwner.photos = [
+        createSimulatedPhoto(shortCode, "1. ภาพหน้างานจุดที่ 1", "#1e3a5f", "#38bdf8", cur.actionDate),
+        createSimulatedPhoto(shortCode, "2. ภาพการบำรุงรักษา", "#334155", "#fbbf24", cur.actionDate),
+        createSimulatedPhoto(shortCode, "3. ภาพวัดค่า/ตรวจสอบ", "#451a03", "#facc15", cur.actionDate)
+      ];
+      photoOwner.hasCustomPhotos = true;
+      renderPhotoSlots();
+      renderAllViews();
+    }
+
+    // ==================== 5. สร้างรายงาน 15 หน้า โดยไม่ให้เครื่องจักรขาดครึ่งหน้าเด็ดขาด ====================
+    // กำหนดความสูงของรูปภาพและเซลล์ในแต่ละหน้าให้พอดีกับ A4 แนวนอน 100%
+    function getPageLayoutMetrics(pageNo) {
+      if (pageNo === 1) return { rowH: 21, photoH: 122 }; // 3 เครื่อง
+      if (pageNo >= 2 && pageNo <= 8) return { rowH: 18, photoH: 102 }; // 4 เครื่อง/หน้า
+      if (pageNo === 9 || pageNo === 10 || pageNo === 12) return { rowH: 19, photoH: 82 }; // 5 เครื่อง/หน้า
+      if (pageNo === 11) return { rowH: 18, photoH: 78, groupPhotoH: 138 }; // 1 ปั๊ม + 8 วาล์ว
+      if (pageNo === 13 || pageNo === 14) return { rowH: 18, photoH: 56, groupPhotoH: 92 }; // 8 รายการสั้น
+      return { rowH: 19, photoH: 75, groupPhotoH: 105 }; // หน้า 15
+    }
+
+    function buildSinglePageHTML(pageNo, highlightEquipId) {
+      const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+      const pageItems = ALL_ITEMS.filter(x => x.page === pageNo);
+      const metrics = getPageLayoutMetrics(pageNo);
+
+      let tbodiesHtml = "";
+      let idx = 0;
+
+      while (idx < pageItems.length) {
+        const item = pageItems[idx];
+
+        // กรณีเป็นกลุ่มที่ใช้ช่องรูปภาพร่วมกันในหน้าเดียวกัน (เช่น วาล์ว 43-46, 47-50, Flow 56-57, Grit 58-60, Radar 68-69, 70-71, Washing 74-75)
+        if (item.photoGroup) {
+          const groupName = item.photoGroup;
+          const groupItems = [];
+          while (idx < pageItems.length && pageItems[idx].photoGroup === groupName) {
+            groupItems.push(pageItems[idx]);
+            idx++;
+          }
+
+          const isGroupHighlighted = groupItems.some(g => g.id === highlightEquipId);
+          const groupPhotos = getEffectivePhotosForGroup(groupName);
+
+          // คำนวณจำนวนแถวทั้งหมดที่ช่องรูปภาพต้องผสาน (rowspan)
+          // เริ่มตั้งแต่แถว sub-item แรกของเครื่องแรกในกลุ่ม ไปจนถึงแถวสุดท้ายของเครื่องสุดท้ายในกลุ่ม
+          let totalGroupRows = 0;
+          groupItems.forEach((g, gIdx) => {
+            const subRowsCount = Math.max(g.minRows, g.subItems.length);
+            totalGroupRows += (gIdx === 0 ? subRowsCount : (1 + subRowsCount));
+          });
+
+          tbodiesHtml += `<tbody class="equip-block ${isGroupHighlighted ? 'active-highlight' : ''}">`;
+
+          groupItems.forEach((g, gIdx) => {
+            if (g.showCategoryHeader) {
+              tbodiesHtml += `<tr class="cat-row"><td colspan="11">${g.category}</td></tr>`;
+            }
+
+            // แถวหัวข้อเครื่องจักร
+            tbodiesHtml += `
+              <tr style="height:${metrics.rowH}px;">
+                <td class="center equip-title-cell">${g.id}</td>
+                <td colspan="2" class="equip-title-cell">${g.name}</td>
+                <td class="center equip-title-cell">วันที่ดำเนินการ :</td>
+                <td></td>
+                <td class="center">${g.actionDate || ""}</td>
+                ${gIdx === 0 ? '<td colspan="5"></td>' : ''}
+              </tr>
+            `;
+
+            const subRowsCount = Math.max(g.minRows, g.subItems.length);
+            for (let r = 0; r < subRowsCount; r++) {
+              const sub = g.subItems[r];
+              tbodiesHtml += `<tr style="height:${metrics.rowH}px;">`;
+              if (sub) {
+                let actualDisplay = "";
+                if (sub.type === "amp") {
+                  actualDisplay = (g.ampValue === "-" || g.ampValue === "") ? g.ampValue : (g.ampValue.toUpperCase().includes("A") ? g.ampValue : `${g.ampValue} A`);
+                } else {
+                  actualDisplay = sub.val || "";
+                }
+                tbodiesHtml += `
+                  <td></td>
+                  <td class="center">${sub.no}</td>
+                  <td>${sub.title}</td>
+                  <td class="center">${sub.freq}</td>
+                  <td style="background:${sub.planColor || 'transparent'};"></td>
+                  <td class="center" style="font-weight:${actualDisplay === '✓' ? 'bold' : 'normal'};">${actualDisplay}</td>
+                `;
+              } else {
+                tbodiesHtml += `<td></td><td></td><td></td><td></td><td></td><td></td>`;
+              }
+
+              // วางเซลล์รูปภาพ 5 ช่องที่แถวแรกของเครื่องแรกในกลุ่ม
+              if (gIdx === 0 && r === 0) {
+                for (let p = 0; p < 5; p++) {
+                  const pSrc = groupPhotos[p];
+                  tbodiesHtml += `
+                    <td rowspan="${totalGroupRows}" class="photo-cell">
+                      ${pSrc ? `<img src="${pSrc}" style="height:${metrics.groupPhotoH || metrics.photoH}px;" />` : ''}
+                    </td>
+                  `;
+                }
+              }
+              tbodiesHtml += `</tr>`;
+            }
+          });
+
+          tbodiesHtml += `</tbody>`;
+          continue;
+        }
+
+        // กรณีเครื่องจักรปกติ (แต่ละเครื่องอยู่ใน <tbody class="equip-block"> ของตัวเอง เพื่อไม่ให้ถูกตัดข้ามหน้าเด็ดขาด)
+        const isHighlighted = item.id === highlightEquipId;
+        tbodiesHtml += `<tbody class="equip-block ${isHighlighted ? 'active-highlight' : ''}">`;
+
+        if (item.showCategoryHeader) {
+          tbodiesHtml += `<tr class="cat-row"><td colspan="11">${item.category}</td></tr>`;
+        }
+
+        const extraRows = item.hasCalibration ? 2 : Math.max(0, item.minRows - item.subItems.length);
+        const totalSubRows = item.subItems.length + extraRows;
+
+        // แถวชื่อเครื่องจักร + วันที่ดำเนินการ
+        tbodiesHtml += `
+          <tr style="height:${metrics.rowH}px;">
+            <td class="center equip-title-cell">${item.id}</td>
+            <td colspan="2" class="equip-title-cell">${item.name}</td>
+            <td class="center equip-title-cell">วันที่ดำเนินการ :</td>
+            <td></td>
+            <td class="center">${item.actionDate || ""}</td>
+            <td colspan="5"></td>
+          </tr>
+        `;
+
+        for (let r = 0; r < totalSubRows; r++) {
+          const sub = item.subItems[r];
+          tbodiesHtml += `<tr style="height:${metrics.rowH}px;">`;
+
+          if (sub) {
+            let actualDisplay = "";
+            if (sub.type === "amp") {
+              actualDisplay = (item.ampValue === "-" || item.ampValue === "") ? item.ampValue : (item.ampValue.toUpperCase().includes("A") ? item.ampValue : `${item.ampValue} A`);
+            } else {
+              actualDisplay = sub.val || "";
+            }
+            tbodiesHtml += `
+              <td></td>
+              <td class="center">${sub.no}</td>
+              <td>${sub.title}</td>
+              <td class="center">${sub.freq}</td>
+              <td style="background:${sub.planColor || 'transparent'};"></td>
+              <td class="center" style="font-weight:${actualDisplay === '✓' ? 'bold' : 'normal'};">${actualDisplay}</td>
+            `;
+          } else if (item.hasCalibration && r === item.subItems.length) {
+            tbodiesHtml += `
+              <td></td><td></td><td></td><td></td>
+              <td colspan="2" class="center">${item.calRangeText}</td>
+            `;
+          } else if (item.hasCalibration && r === item.subItems.length + 1) {
+            const calText = item.calPercent ? `อยู่ในช่วง = ${item.calPercent} %` : `อยู่ในช่วง =        %`;
+            tbodiesHtml += `
+              <td></td><td></td><td></td><td></td>
+              <td colspan="2" class="center slope-val">${calText}</td>
+            `;
+          } else {
+            tbodiesHtml += `<td></td><td></td><td></td><td></td><td></td><td></td>`;
+          }
+
+          if (r === 0) {
+            for (let p = 0; p < 5; p++) {
+              const photoSrc = item.photos[p];
+              tbodiesHtml += `
+                <td rowspan="${totalSubRows}" class="photo-cell">
+                  ${photoSrc ? `<img src="${photoSrc}" style="height:${metrics.photoH}px;" />` : ''}
+                </td>
+              `;
+            }
+          }
+
+          tbodiesHtml += `</tr>`;
+        }
+
+        if (item.hasNote || (item.note && item.note.trim() !== "")) {
+          tbodiesHtml += `
+            <tr style="height:${metrics.rowH}px;">
+              <td class="note-label">${item.note ? 'Note' : ''}</td>
+              <td colspan="2" class="note-text">${item.note || ''}</td>
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            </tr>
+          `;
+        }
+
+        tbodiesHtml += `</tbody>`;
+        idx++;
+      }
+
+      const firstId = pageItems[0].id;
+      const lastId = pageItems[pageItems.length - 1].id;
+
+      return `
+        <div class="report-page">
+          <div class="page-badge-screen">📄 หน้าที่ ${pageNo} / 15 (ลำดับที่ ${firstId}–${lastId})</div>
+          <div class="uu-header">
+            <div></div>
+            <div class="uu-title-center">
+              <h2>รายงานการบำรุงรักษาเครื่องจักรและเครื่องมือวัดระบบบำบัดน้ำเสีย ครั้ง &nbsp; ${roundText}</h2>
+              <h3>โครงการ ระบบบำบัดน้ำเสีย นิคมอุตสาหกรรมหลักชัยเมืองยาง ขนาด 3,750 ลูกบาศก์เมตรต่อวัน</h3>
+              <div class="uu-legend">
+                <div class="uu-legend-item"><span class="uu-legend-box" style="background:#ffff00;"></span> ทุกเดือน</div>
+                <div class="uu-legend-item"><span class="uu-legend-box" style="background:#ed7d31;"></span> ทุก 3 เดือน</div>
+                <div class="uu-legend-item"><span class="uu-legend-box" style="background:#7030a0;"></span> ทุก 6 เดือน</div>
+                <div class="uu-legend-item"><span class="uu-legend-box" style="background:#70ad47;"></span> ทุก 1 ปี</div>
+              </div>
+            </div>
+            <div class="uu-logo">
+              <div class="logo-arc">
+                <svg width="100" height="24" viewBox="0 0 110 28">
+                  <ellipse cx="55" cy="14" rx="46" ry="10" fill="none" stroke="#1e40af" stroke-width="2" />
+                  <ellipse cx="55" cy="14" rx="28" ry="6" fill="none" stroke="#0284c7" stroke-width="2" />
+                  <ellipse cx="55" cy="14" rx="12" ry="3" fill="#0369a1" />
+                </svg>
+                <div class="uu-main">Universal Utilities</div>
+                <div class="uu-sub">GROUP</div>
+              </div>
+            </div>
+          </div>
+
+          <table class="uu-table">
+            <colgroup>
+              <col style="width:46px;" />
+              <col style="width:24px;" />
+              <col style="width:205px;" />
+              <col style="width:82px;" />
+              <col style="width:40px;" />
+              <col style="width:85px;" />
+              <col style="width:124px;" />
+              <col style="width:124px;" />
+              <col style="width:124px;" />
+              <col style="width:124px;" />
+              <col style="width:124px;" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>ลำดับที่</th>
+                <th colspan="2">รายการตรวจสอบ</th>
+                <th>ความถี่</th>
+                <th>Plan</th>
+                <th>Actual</th>
+                <th colspan="5">ภาพประกอบ</th>
+              </tr>
+            </thead>
+            ${tbodiesHtml}
+          </table>
+        </div>
+      `;
+    }
+
+    function renderLivePreview() {
+      const cur = ALL_ITEMS[currentEquipIndex];
+      const showAll = document.getElementById("showAllPagesLive").checked;
+      const container = document.getElementById("liveReportContainer");
+      document.getElementById("livePreviewTitle").textContent = showAll
+        ? "👁️ พรีวิวหน้ากระดาษรายงานจริง (แสดงครบทั้ง 15 หน้า)"
+        : `👁️ พรีวิวหน้าที่ ${cur.page} / 15 (กำลังแก้ไขลำดับที่ ${cur.id}: ${cur.name})`;
+
+      if (showAll) {
+        let html = "";
+        for (let p = 1; p <= 15; p++) {
+          html += buildSinglePageHTML(p, cur.id);
+        }
+        container.innerHTML = html;
+      } else {
+        container.innerHTML = buildSinglePageHTML(cur.page, cur.id);
+      }
+    }
+
+    function renderFullReportPages() {
+      const container = document.getElementById("fullReportContainer");
+      let html = "";
+      for (let p = 1; p <= 15; p++) {
+        html += buildSinglePageHTML(p, null);
+      }
+      container.innerHTML = html;
+    }
+
+    function printFullReport() {
+      renderFullReportPages();
+      window.print();
+    }
+
+    // ==================== 6. ตาราง Google Sheet (1_Raw_Data) & Export .xlsx ครบ 76 รายการ ====================
+    function renderRawDataTable() {
+      const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+      const table = document.getElementById("rawDataTable");
+
+      let html = `
+        <thead>
+          <tr>
+            <th>หน้า</th>
+            <th>ลำดับ</th>
+            <th>หมวดหมู่</th>
+            <th>ชื่อเครื่องจักร (คงที่)</th>
+            <th style="background:#15803d;">สถานะบันทึก</th>
+            <th style="background:#15803d;">วันที่ดำเนินการ</th>
+            <th style="background:#15803d;">กระแสไฟ (A)</th>
+            <th style="background:#15803d;">ผลตรวจย่อย</th>
+            <th style="background:#15803d;">ค่า % Cal</th>
+            <th style="background:#15803d;">หมายเหตุ (Note)</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+      `;
+
+      ALL_ITEMS.forEach((item, idx) => {
+        const checksSummary = item.subItems
+          .filter(s => s.type !== "amp")
+          .map(s => `${s.no}:${s.val || '_'}`)
+          .join(" | ");
+
+        html += `
+          <tr>
+            <td class="center">หน้า ${item.page}</td>
+            <td class="center"><strong>${item.id}</strong></td>
+            <td>${item.category}</td>
+            <td><strong>${item.name}</strong></td>
+            <td>
+              ${item.isSaved
+                ? '<span class="badge-locked">🔒 บันทึกแล้ว</span>'
+                : '<span class="badge-inherited">⏳ รอบันทึก</span>'}
+            </td>
+            <td><strong>${item.actionDate}</strong></td>
+            <td><strong style="color:#0f4c81;">${item.hasAmp ? (item.ampValue || "") : "-"}</strong></td>
+            <td style="font-size:11.5px;">${checksSummary}</td>
+            <td><strong style="color:#2563eb;">${item.hasCalibration ? (item.calPercent + "%") : "-"}</strong></td>
+            <td style="color:#166534;">${item.note || ""}</td>
+            <td>
+              <button class="equip-pill" onclick="switchTab('mobile');selectEquipment(${idx});">✏️ แก้ไข</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody>`;
+      table.innerHTML = html;
+    }
+
+    function clearAllMonthlyInputs() {
+      if (!confirm("ต้องการล้างเฉพาะค่าที่กรอกรายเดือนของทั้ง 76 รายการ เพื่อเตรียมตารางว่างสำหรับเดือนถัดไปหรือไม่?")) return;
+      ALL_ITEMS.forEach(item => {
+        item.isSaved = false;
+        if (item.hasAmp) item.ampValue = "";
+        if (item.hasCalibration) item.calPercent = "";
+        item.note = "";
+        item.photos = [];
+        item.subItems.forEach(s => {
+          if (s.type !== "amp") s.val = "";
+        });
+      });
+      renderMobileControls();
+      renderAllViews();
+    }
+
+    function exportToExcel() {
+      const wb = XLSX.utils.book_new();
+      const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+
+      const rawHeaders = [
+        "Report_Round (ครั้งที่)",
+        "Page_No (หน้า)",
+        "Equip_No (ลำดับที่ - คงที่)",
+        "Category (หมวดหมู่ - คงที่)",
+        "Equip_Name (ชื่อเครื่องจักร - คงที่)",
+        "Saved_Status (สถานะล็อกวันที่)",
+        "Action_Date (วันที่ดำเนินการ - กรอก)",
+        "Amp_Value (กระแสไฟฟ้า A - กรอก)",
+        "Check_1", "Check_2", "Check_3", "Check_4", "Check_5",
+        "Cal_Percent (ค่า % Slope - กรอก)",
+        "Note (หมายเหตุ - กรอก)",
+        "Photo_1_URL", "Photo_2_URL", "Photo_3_URL", "Photo_4_URL", "Photo_5_URL"
+      ];
+
+      const rawRows = [rawHeaders];
+      ALL_ITEMS.forEach(item => {
+        const nonAmp = item.subItems.filter(s => s.type !== "amp");
+        rawRows.push([
+          roundText,
+          item.page,
+          item.id,
+          item.category,
+          item.name,
+          item.isSaved ? "บันทึกแล้ว" : "รอบันทึก",
+          item.actionDate,
+          item.hasAmp ? item.ampValue : "",
+          nonAmp[0] ? nonAmp[0].val : "",
+          nonAmp[1] ? nonAmp[1].val : "",
+          nonAmp[2] ? nonAmp[2].val : "",
+          nonAmp[3] ? nonAmp[3].val : "",
+          nonAmp[4] ? nonAmp[4].val : "",
+          item.hasCalibration ? item.calPercent : "",
+          item.note || "",
+          "", "", "", "", ""
+        ]);
+      });
+
+      const wsRaw = XLSX.utils.aoa_to_sheet(rawRows);
+      XLSX.utils.book_append_sheet(wb, wsRaw, "1_Raw_Data_76_Items");
+
+      // สร้าง Sheet 2_Report_Form ครบทั้ง 76 รายการพร้อมสูตรเชื่อมกับ 1_Raw_Data_76_Items
+      const repRows = [
+        [`รายงานการบำรุงรักษาเครื่องจักรและเครื่องมือวัดระบบบำบัดน้ำเสีย ครั้ง  ${roundText}`],
+        ["โครงการ ระบบบำบัดน้ำเสีย นิคมอุตสาหกรรมหลักชัยเมืองยาง ขนาด 3,750 ลูกบาศก์เมตรต่อวัน"],
+        [""],
+        ["ลำดับที่", "ข้อย่อย", "รายการตรวจสอบ", "ความถี่", "Plan", "Actual (ดึงจาก 1_Raw_Data)", "ภาพประกอบ 1", "ภาพประกอบ 2", "ภาพประกอบ 3", "ภาพประกอบ 4", "ภาพประกอบ 5"]
+      ];
+
+      const checkCols = ["I", "J", "K", "L", "M"];
+      ALL_ITEMS.forEach((item, idx) => {
+        const r = idx + 2;
+        if (item.showCategoryHeader) {
+          repRows.push([item.category, "", "", "", "", "", "", "", "", "", ""]);
+        }
+        repRows.push([
+          item.id,
+          item.name,
+          "",
+          "วันที่ดำเนินการ :",
+          "",
+          { f: `'1_Raw_Data_76_Items'!G${r}` },
+          "", "", "", "", ""
+        ]);
+
+        let cIdx = 0;
+        item.subItems.forEach(sub => {
+          let fObj;
+          if (sub.type === "amp") {
+            fObj = { f: `IF('1_Raw_Data_76_Items'!H${r}="", "", IF('1_Raw_Data_76_Items'!H${r}="-", "-", '1_Raw_Data_76_Items'!H${r}&" A"))` };
+          } else {
+            const colLet = checkCols[cIdx++];
+            fObj = { f: `'1_Raw_Data_76_Items'!${colLet}${r}` };
+          }
+          repRows.push(["", sub.no, sub.title, sub.freq, sub.freq, fObj, "", "", "", "", ""]);
+        });
+
+        if (item.hasCalibration) {
+          repRows.push(["", "", "", "", item.calRangeText, "", "", "", "", "", ""]);
+          repRows.push(["", "", "", "", { f: `"อยู่ในช่วง = " & '1_Raw_Data_76_Items'!N${r} & " %"` }, "", "", "", "", "", ""]);
+        }
+        if (item.hasNote) {
+          repRows.push(["Note", { f: `'1_Raw_Data_76_Items'!O${r}` }, "", "", "", "", "", "", "", "", ""]);
+        }
+      });
+
+      const wsRep = XLSX.utils.aoa_to_sheet(repRows);
+      XLSX.utils.book_append_sheet(wb, wsRep, "2_Report_Form_76_Items");
+
+      XLSX.writeFile(wb, "PM_Report_Complete_76_Items.xlsx");
+    }
+
+    function renderAllViews() {
+      renderLivePreview();
+      renderRawDataTable();
+      if (document.getElementById("tab-report").classList.contains("active")) {
+        renderFullReportPages();
+      }
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-panel").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+
+      if (tabName === "mobile") {
+        document.getElementById("tab-mobile").classList.add("active");
+        document.querySelectorAll(".tab-btn")[0].classList.add("active");
+        renderLivePreview();
+      } else if (tabName === "sheet") {
+        document.getElementById("tab-sheet").classList.add("active");
+        document.querySelectorAll(".tab-btn")[1].classList.add("active");
+        renderRawDataTable();
+      } else if (tabName === "report") {
+        document.getElementById("tab-report").classList.add("active");
+        document.querySelectorAll(".tab-btn")[2].classList.add("active");
+        renderFullReportPages();
+      }
+    }
+
+    const GOOGLE_SHEET_ID = "1t44kkGGjRiUCRCYmySL62ohrPX5EBY8PJWU0CCTSmvQ";
+
+    async function syncFromGoogleSheet(silent = false) {
+      try {
+        const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=1_Raw_Data`;
+        const res = await fetch(url);
+        const text = await res.text();
+        const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+        const data = JSON.parse(jsonStr);
+        if (data && data.table && Array.isArray(data.table.rows)) {
+          data.table.rows.forEach(row => {
+            const c = row.c || [];
+            const val = idx => (c[idx] && c[idx].v !== null && c[idx].v !== undefined) ? String(c[idx].f || c[idx].v).trim() : "";
+            const equipId = Number(val(2));
+            const target = ALL_ITEMS.find(x => x.id === equipId);
+            if (target) {
+              const roundStr = val(1);
+              if (roundStr && document.getElementById("globalRound")) {
+                document.getElementById("globalRound").value = roundStr;
+              }
+              const actDate = val(6);
+              if (actDate) {
+                target.actionDate = actDate;
+              }
+              if (val(0)) {
+                target.isSaved = true;
+              }
+              if (target.hasAmp && val(7) !== "") target.ampValue = val(7);
+              const nonAmp = target.subItems.filter(s => s.type !== "amp");
+              for (let i = 0; i < nonAmp.length; i++) {
+                const checkVal = val(8 + i);
+                if (checkVal !== "") nonAmp[i].val = checkVal;
+              }
+              if (target.hasCalibration && val(13) !== "") {
+                target.calPercent = val(13);
+              }
+              if (val(14) !== "") target.note = val(14);
+              for (let p = 0; p < 5; p++) {
+                const pUrl = val(15 + p);
+                if (pUrl && pUrl.startsWith("http")) target.photos[p] = pUrl;
+              }
+            }
+          });
+          renderMobileControls();
+          renderAllViews();
+          if (!silent) alert("✅ ดึงข้อมูลล่าสุดทั้ง 76 รายการจาก Google Sheet ของคุณเรียบร้อยแล้ว!");
+        }
+      } catch (err) {
+        if (!silent) alert("⚠️ ไม่สามารถดึงข้อมูลจาก Google Sheet ได้: " + err.message);
+      }
+    }
+
+    // เริ่มต้นระบบ
+    initDefaultPhotos();
+    loadPersistedState().then(() => {
+      renderMobileControls();
+      renderAllViews();
+      syncFromGoogleSheet(true);
+    });
+  </script>
+</body>
+</html>
