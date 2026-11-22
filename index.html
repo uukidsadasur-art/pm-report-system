@@ -842,6 +842,26 @@
     </div>
   </div>
 
+  <!-- Confirmation & Password Popup Modal -->
+  <div id="confirmActionModal" class="no-print" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:10000;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,0.28);text-align:center;">
+      <div id="confirmModalIcon" style="font-size:34px;margin-bottom:6px;">⚠️</div>
+      <h3 id="confirmModalTitle" style="margin:0 0 8px 0;color:#0f4c81;font-size:17px;">ยืนยันการดำเนินการ</h3>
+      <p id="confirmModalMessage" style="margin:0 0 14px 0;font-size:13.5px;color:#334155;line-height:1.5;white-space:pre-line;"></p>
+
+      <div id="confirmModalPasswordBox" style="display:none;margin-bottom:14px;text-align:left;">
+        <label class="form-label" style="font-size:12.5px;color:#0f4c81;">🔒 กรุณาใส่รหัสยืนยันเพื่อล้างข้อมูลทั้งหมด:</label>
+        <input type="password" id="confirmModalPasswordInput" class="form-control" style="font-size:15px;padding:10px;text-align:center;letter-spacing:3px;" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter') executeConfirmModalAction();" />
+        <div id="confirmModalError" style="display:none;color:#dc2626;font-size:12px;font-weight:700;margin-top:6px;text-align:center;">❌ รหัสยืนยันไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง</div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="button" class="toggle-btn" style="flex:1;padding:10px;font-size:14px;background:#f1f5f9;color:#475569;border-color:#cbd5e1;" onclick="closeConfirmModal()">ยกเลิก</button>
+        <button type="button" id="confirmModalOkBtn" class="btn-primary" style="flex:1.3;margin-top:0;padding:10px;font-size:14px;background:#dc2626;box-shadow:0 4px 10px rgba(220,38,38,0.25);" onclick="executeConfirmModalAction()">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==================== 1. สร้างฐานข้อมูลครบทั้ง 76 รายการ (15 หน้าตาม PDF ต้นฉบับ) ====================
     function cloneSubs(templateSubs) {
@@ -1751,46 +1771,138 @@
       });
     }
 
+    let _pendingConfirmCallback = null;
+    let _pendingRequirePassword = false;
+
+    function openConfirmModal({ icon = "⚠️", title = "ยืนยันการดำเนินการ", message = "", okText = "ยืนยัน", requirePassword = false, onConfirm = null }) {
+      const modal = document.getElementById("confirmActionModal");
+      if (!modal) return;
+      document.getElementById("confirmModalIcon").textContent = icon;
+      document.getElementById("confirmModalTitle").textContent = title;
+      document.getElementById("confirmModalMessage").textContent = message;
+      document.getElementById("confirmModalOkBtn").textContent = okText;
+
+      const pwBox = document.getElementById("confirmModalPasswordBox");
+      const pwInput = document.getElementById("confirmModalPasswordInput");
+      const errEl = document.getElementById("confirmModalError");
+
+      _pendingRequirePassword = !!requirePassword;
+      _pendingConfirmCallback = onConfirm;
+
+      if (requirePassword) {
+        pwBox.style.display = "block";
+        pwInput.value = "";
+        errEl.style.display = "none";
+        setTimeout(() => pwInput.focus(), 80);
+      } else {
+        pwBox.style.display = "none";
+        pwInput.value = "";
+        errEl.style.display = "none";
+      }
+
+      modal.style.display = "flex";
+    }
+
+    function closeConfirmModal() {
+      const modal = document.getElementById("confirmActionModal");
+      if (modal) modal.style.display = "none";
+      _pendingConfirmCallback = null;
+      _pendingRequirePassword = false;
+    }
+
+    function executeConfirmModalAction() {
+      if (_pendingRequirePassword) {
+        const pwInput = document.getElementById("confirmModalPasswordInput");
+        const errEl = document.getElementById("confirmModalError");
+        const val = pwInput ? pwInput.value : "";
+        if (val !== "UU@12345") {
+          if (errEl) errEl.style.display = "block";
+          if (pwInput) {
+            pwInput.value = "";
+            pwInput.focus();
+          }
+          return;
+        }
+      }
+      const cb = _pendingConfirmCallback;
+      closeConfirmModal();
+      if (typeof cb === "function") cb();
+    }
+
     function removePhotoAt(slotIdx) {
       const cur = ALL_ITEMS[currentEquipIndex];
-      const photoOwner = getTargetItemForPhoto(cur);
-      photoOwner.photos.splice(slotIdx, 1);
-      photoOwner.hasCustomPhotos = true;
-      persistStateToStorage();
-      renderPhotoSlots();
-      renderAllViews();
-      pushItemToGoogleSheet(cur);
+      openConfirmModal({
+        icon: "🗑️",
+        title: "ยืนยันการลบรูปภาพ",
+        message: `ต้องการลบรูปภาพที่ ${slotIdx + 1} ของเครื่องลำดับที่ #${cur.id}: ${cur.name}\n(และลบออกจาก Google Sheet ด้วย) ใช่หรือไม่?`,
+        okText: "🗑️ ยืนยันลบรูป",
+        requirePassword: false,
+        onConfirm: () => {
+          const photoOwner = getTargetItemForPhoto(cur);
+          photoOwner.photos.splice(slotIdx, 1);
+          photoOwner.hasCustomPhotos = true;
+          persistStateToStorage();
+          renderPhotoSlots();
+          renderAllViews();
+          pushItemToGoogleSheet(cur);
+          showMobileToast(`🗑️ ลบรูปภาพที่ ${slotIdx + 1} ของเครื่อง #${cur.id} เรียบร้อยแล้ว`);
+        }
+      });
     }
 
     function clearPhotosForCurrent() {
       const cur = ALL_ITEMS[currentEquipIndex];
       const photoOwner = getTargetItemForPhoto(cur);
-      photoOwner.photos = [];
-      photoOwner.hasCustomPhotos = true;
-      persistStateToStorage();
-      renderPhotoSlots();
-      renderAllViews();
-      pushItemToGoogleSheet(cur);
+      const hasAny = Array.isArray(photoOwner.photos) && photoOwner.photos.some(p => p);
+      if (!hasAny) {
+        showMobileToast("ℹ️ เครื่องนี้ยังไม่มีรูปภาพให้ล้างครับ", "#475569");
+        return;
+      }
+      openConfirmModal({
+        icon: "🗑️",
+        title: "ยืนยันการล้างรูปเครื่องนี้",
+        message: `ต้องการล้างรูปภาพทั้งหมดของเครื่องลำดับที่ #${cur.id}: ${cur.name}\n(และลบรูปออกจาก Google Sheet ด้วย) ใช่หรือไม่?`,
+        okText: "🗑️ ยืนยันล้างรูปเครื่องนี้",
+        requirePassword: false,
+        onConfirm: () => {
+          photoOwner.photos = [];
+          photoOwner.hasCustomPhotos = true;
+          persistStateToStorage();
+          renderPhotoSlots();
+          renderAllViews();
+          pushItemToGoogleSheet(cur);
+          showMobileToast(`🗑️ ล้างรูปภาพทั้งหมดของเครื่อง #${cur.id} เรียบร้อยแล้ว`);
+        }
+      });
     }
 
     function clearCurrentItemOnly() {
       const cur = ALL_ITEMS[currentEquipIndex];
-      if (!confirm(`ต้องการล้างข้อมูลและรูปภาพของเครื่อง #${cur.id}: ${cur.name} (และลบออกจาก Google Sheet ด้วย) ใช่หรือไม่?`)) return;
-      cur.isSaved = false;
-      cur.actionDate = "";
-      if (cur.hasAmp) cur.ampValue = "";
-      if (cur.hasCalibration) cur.calPercent = "";
-      cur.note = "";
-      cur.subItems.forEach(s => {
-        if (s.type !== "amp") s.val = "";
+      openConfirmModal({
+        icon: "🧹",
+        title: "ยืนยันการล้างข้อมูลเครื่องนี้",
+        message: `ต้องการล้างข้อมูลที่กรอกและรูปภาพทั้งหมดของเครื่องลำดับที่ #${cur.id}: ${cur.name}\n(และลบออกจาก Google Sheet ด้วย) ใช่หรือไม่?`,
+        okText: "🧹 ยืนยันล้างข้อมูลเครื่องนี้",
+        requirePassword: false,
+        onConfirm: () => {
+          cur.isSaved = false;
+          cur.actionDate = "";
+          if (cur.hasAmp) cur.ampValue = "";
+          if (cur.hasCalibration) cur.calPercent = "";
+          cur.note = "";
+          cur.subItems.forEach(s => {
+            if (s.type !== "amp") s.val = "";
+          });
+          const photoOwner = getTargetItemForPhoto(cur);
+          photoOwner.photos = [];
+          photoOwner.hasCustomPhotos = true;
+          persistStateToStorage();
+          renderMobileControls();
+          renderAllViews();
+          pushItemToGoogleSheet(cur);
+          showMobileToast(`🧹 ล้างข้อมูลเครื่อง #${cur.id} เรียบร้อยแล้ว`);
+        }
       });
-      const photoOwner = getTargetItemForPhoto(cur);
-      photoOwner.photos = [];
-      photoOwner.hasCustomPhotos = true;
-      persistStateToStorage();
-      renderMobileControls();
-      renderAllViews();
-      pushItemToGoogleSheet(cur);
     }
 
     function generateDemoPhotosForCurrent() {
@@ -2161,59 +2273,66 @@
       });
     }
 
-    async function clearAllMonthlyInputs() {
-      if (!confirm("ต้องการล้างค่าที่กรอกและรูปภาพของทั้ง 76 รายการ (รวมถึงล้างค่าใน Google Sheet ด้วย) เพื่อเตรียมขึ้นเดือนใหม่หรือไม่?\n\n💡 แนะนำ: ควรกดปุ่ม '📥 ดาวน์โหลดไฟล์ Excel พร้อมรูปภาพ (.xlsx)' เพื่อเซฟเก็บไว้ก่อนล้างข้อมูลครับ")) return;
+    function clearAllMonthlyInputs() {
+      openConfirmModal({
+        icon: "🔒",
+        title: "ยืนยันการล้างข้อมูลทั้งหมด (ขึ้นเดือนใหม่)",
+        message: "การดำเนินการนี้จะล้างค่าที่กรอกและรูปภาพของทั้ง 76 รายการ (รวมถึงใน Google Sheet ด้วย) เพื่อเตรียมตารางว่างสำหรับเดือนถัดไป\n\n💡 แนะนำให้กดดาวน์โหลดไฟล์ Excel (.xlsx) เก็บไว้ก่อนดำเนินการ",
+        okText: "🧹 ยืนยันล้างทั้งหมด",
+        requirePassword: true,
+        onConfirm: async () => {
+          // เก็บรายการที่มีข้อมูลอยู่เพื่อส่งไปล้างใน Google Sheet
+          const itemsToClear = ALL_ITEMS.filter(it => {
+            const hasChecks = it.subItems.some(s => s.type !== "amp" && s.val);
+            const hasPhotos = Array.isArray(it.photos) && it.photos.some(p => p);
+            return it.isSaved || it.actionDate || it.ampValue || it.calPercent || it.note || hasChecks || hasPhotos;
+          });
+          const targetList = itemsToClear.length > 0 ? itemsToClear : ALL_ITEMS;
 
-      // เก็บรายการที่มีข้อมูลอยู่เพื่อส่งไปล้างใน Google Sheet
-      const itemsToClear = ALL_ITEMS.filter(it => {
-        const hasChecks = it.subItems.some(s => s.type !== "amp" && s.val);
-        const hasPhotos = Array.isArray(it.photos) && it.photos.some(p => p);
-        return it.isSaved || it.actionDate || it.ampValue || it.calPercent || it.note || hasChecks || hasPhotos;
-      });
-      const targetList = itemsToClear.length > 0 ? itemsToClear : ALL_ITEMS;
+          resetItemsToCleanTemplate();
+          persistStateToStorage();
+          renderMobileControls();
+          renderAllViews();
 
-      resetItemsToCleanTemplate();
-      persistStateToStorage();
-      renderMobileControls();
-      renderAllViews();
+          if (gasWebAppUrl && gasWebAppUrl.startsWith("https://script.google.com")) {
+            window._isClearingSheet = true;
+            try {
+              showMobileToast(`🧹 กำลังล้างข้อมูลใน Google Sheet (0/${targetList.length})...`, "#b45309");
+              const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
 
-      if (gasWebAppUrl && gasWebAppUrl.startsWith("https://script.google.com")) {
-        window._isClearingSheet = true;
-        try {
-          showMobileToast(`🧹 กำลังล้างข้อมูลใน Google Sheet (0/${targetList.length})...`, "#b45309");
-          const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+              // 1. ลองสั่ง clear_all แบบรวดเดียวก่อน (หากอัปเดตสคริปต์ล่าสุดแล้วจะเสร็จใน 1 วินาที)
+              let clearedFast = false;
+              try {
+                const res = await fetch(gasWebAppUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "text/plain;charset=utf-8" },
+                  body: JSON.stringify({ action: "clear_all", round: roundText })
+                });
+                if (res.ok) {
+                  const json = await res.json();
+                  if (json && json.clearedAll) clearedFast = true;
+                }
+              } catch (e) {}
 
-          // 1. ลองสั่ง clear_all แบบรวดเดียวก่อน (หากอัปเดตสคริปต์ล่าสุดแล้วจะเสร็จใน 1 วินาที)
-          let clearedFast = false;
-          try {
-            const res = await fetch(gasWebAppUrl, {
-              method: "POST",
-              headers: { "Content-Type": "text/plain;charset=utf-8" },
-              body: JSON.stringify({ action: "clear_all", round: roundText })
-            });
-            if (res.ok) {
-              const json = await res.json();
-              if (json && json.clearedAll) clearedFast = true;
+              // 2. หากยังเป็นสคริปต์เวอร์ชันเดิม ให้ส่งล้างทีละชุดจนครบทุกรายการที่มีข้อมูล
+              if (!clearedFast) {
+                const batchSize = 4;
+                for (let i = 0; i < targetList.length; i += batchSize) {
+                  const batch = targetList.slice(i, i + batchSize);
+                  await Promise.all(batch.map(it => pushItemToGoogleSheet(it, true)));
+                  const done = Math.min(targetList.length, i + batch.length);
+                  showMobileToast(`🧹 กำลังล้างข้อมูลใน Google Sheet (${done}/${targetList.length})...`, "#b45309");
+                }
+              }
+              showMobileToast("✅ ล้างข้อมูลและลิงก์รูปภาพใน Google Sheet เรียบร้อยแล้ว! รีเฟรชหน้าเว็บได้เลยข้อมูลเก่าจะไม่กลับมาอีก", "#059669");
+            } finally {
+              window._isClearingSheet = false;
             }
-          } catch (e) {}
-
-          // 2. หากยังเป็นสคริปต์เวอร์ชันเดิม ให้ส่งล้างทีละชุดจนครบทุกรายการที่มีข้อมูล
-          if (!clearedFast) {
-            const batchSize = 4;
-            for (let i = 0; i < targetList.length; i += batchSize) {
-              const batch = targetList.slice(i, i + batchSize);
-              await Promise.all(batch.map(it => pushItemToGoogleSheet(it, true)));
-              const done = Math.min(targetList.length, i + batch.length);
-              showMobileToast(`🧹 กำลังล้างข้อมูลใน Google Sheet (${done}/${targetList.length})...`, "#b45309");
-            }
+          } else {
+            showMobileToast("✅ ล้างค่าทั้งหมดเรียบร้อยแล้ว!", "#059669");
           }
-          showMobileToast("✅ ล้างข้อมูลและลิงก์รูปภาพใน Google Sheet เรียบร้อยแล้ว! รีเฟรชหน้าเว็บได้เลยข้อมูลเก่าจะไม่กลับมาอีก", "#059669");
-        } finally {
-          window._isClearingSheet = false;
         }
-      } else {
-        showMobileToast("✅ ล้างค่าทั้งหมดเรียบร้อยแล้ว!", "#059669");
-      }
+      });
     }
 
     function createUULogoDataUrl() {
