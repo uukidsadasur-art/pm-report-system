@@ -6,6 +6,7 @@
   <title>ระบบกรอกข้อมูล PM & ออกรายงานอัตโนมัติครบ 76 รายการ (Universal Utilities GROUP)</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     :root {
       --primary: #0f4c81;
@@ -622,8 +623,9 @@
       <button class="tab-btn active" onclick="switchTab('mobile')">📱 1. แอพมือถือ (กรอกข้อมูล 1–76)</button>
       <button class="tab-btn" onclick="switchTab('sheet')">📊 2. ตาราง Google Sheet (ครบ 76 รายการ)</button>
       <button class="tab-btn" onclick="switchTab('report')">📄 3. รายงานพร้อมพิมพ์ PDF (จัดหน้าพอดี 15 หน้า)</button>
-      <button class="tab-btn" style="background:#10b981;border-color:#059669;" onclick="syncFromGoogleSheet()">🔄 ดึงข้อมูลจาก Google Sheet</button>
-      <a href="https://docs.google.com/spreadsheets/d/1t44kkGGjRiUCRCYmySL62ohrPX5EBY8PJWU0CCTSmvQ/edit?usp=sharing" target="_blank" class="tab-btn" style="text-decoration:none;background:#f59e0b;border-color:#d97706;">📗 เปิด Google Sheet ของคุณ ↗</a>
+      <button class="tab-btn" style="background:#16a34a;border-color:#15803d;" onclick="exportToExcel()">📥 Export Excel พร้อมรูปเหมือน PDF (.xlsx)</button>
+      <button class="tab-btn" style="background:#0284c7;border-color:#0369a1;" onclick="syncFromGoogleSheet()">🔄 ดึงข้อมูลล่าสุด</button>
+      <a href="https://docs.google.com/spreadsheets/d/1t44kkGGjRiUCRCYmySL62ohrPX5EBY8PJWU0CCTSmvQ/edit?usp=sharing" target="_blank" class="tab-btn" style="text-decoration:none;background:#f59e0b;border-color:#d97706;">📗 เปิด Google Sheet ↗</a>
     </div>
   </header>
 
@@ -762,7 +764,13 @@
               </button>
             </div>
 
-            <div style="display:flex;gap:8px;margin-top:12px;">
+            <div style="margin-top:12px;">
+              <button type="button" class="btn-primary" style="background:#16a34a;margin-top:0;padding:11px;font-size:13.5px;" onclick="exportToExcel()">
+                📥 ดาวน์โหลดไฟล์ Excel จัดหน้าเหมือน PDF พร้อมรูปภาพ (.xlsx)
+              </button>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:8px;">
               <button type="button" class="toggle-btn" style="flex:1;padding:9px;background:#f1f5f9;color:#0f4c81;border-color:#cbd5e1;" onclick="switchTab('report')">
                 📄 ดูรายงาน 15 หน้า / พิมพ์ PDF
               </button>
@@ -790,7 +798,7 @@
             </p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn-action green" onclick="exportToExcel()">📥 ดาวน์โหลดไฟล์ Google Sheet ครบ 76 รายการ (.xlsx)</button>
+            <button class="btn-action green" onclick="exportToExcel()">📥 ดาวน์โหลด Excel จัดหน้าเหมือน PDF พร้อมรูปภาพ (.xlsx)</button>
             <button class="btn-action" onclick="clearAllMonthlyInputs()" style="background:#dc2626;">🧹 ล้างค่าที่กรอก (เตรียมขึ้นเดือนใหม่)</button>
           </div>
         </div>
@@ -811,7 +819,7 @@
           </div>
         </div>
         <div style="display:flex;gap:8px;">
-          <button class="btn-action green" onclick="exportToExcel()">📥 ดาวน์โหลด Google Sheet (.xlsx)</button>
+          <button class="btn-action green" onclick="exportToExcel()">📥 ดาวน์โหลด Excel จัดหน้าเหมือน PDF พร้อมรูปภาพ (.xlsx)</button>
           <button class="btn-action" onclick="window.print()">🖨️ สั่งพิมพ์ / บันทึกเป็น PDF (15 หน้า)</button>
         </div>
       </div>
@@ -819,6 +827,19 @@
       <div id="fullReportContainer"></div>
     </div>
 
+  </div>
+
+  <!-- Progress Modal for Rich Excel Export with Embedded Photos -->
+  <div id="excelExportModal" class="no-print" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,0.25);text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">📗</div>
+      <h3 id="excelExportTitle" style="margin:0 0 6px 0;color:#0f4c81;font-size:17px;">กำลังสร้างไฟล์ Excel พร้อมฝังรูปภาพจริง...</h3>
+      <p id="excelExportDesc" style="margin:0 0 14px 0;font-size:13px;color:#475569;">กำลังดึงรูปภาพจาก Google Drive และจัดหน้าตาราง 15 หน้าให้เหมือน PDF</p>
+      <div style="background:#e2e8f0;height:12px;border-radius:999px;overflow:hidden;">
+        <div id="excelExportBar" style="background:linear-gradient(90deg,#0f4c81,#10b981);height:100%;width:5%;transition:width 0.25s;"></div>
+      </div>
+      <div id="excelExportCount" style="margin-top:8px;font-size:12.5px;font-weight:700;color:#0f4c81;">เตรียมข้อมูล...</div>
+    </div>
   </div>
 
   <script>
@@ -2141,7 +2162,7 @@
     }
 
     async function clearAllMonthlyInputs() {
-      if (!confirm("ต้องการล้างค่าที่กรอกและรูปภาพของทั้ง 76 รายการ (รวมถึงล้างค่าใน Google Sheet ด้วย) เพื่อเตรียมขึ้นเดือนใหม่หรือไม่?")) return;
+      if (!confirm("ต้องการล้างค่าที่กรอกและรูปภาพของทั้ง 76 รายการ (รวมถึงล้างค่าใน Google Sheet ด้วย) เพื่อเตรียมขึ้นเดือนใหม่หรือไม่?\n\n💡 แนะนำ: ควรกดปุ่ม '📥 ดาวน์โหลดไฟล์ Excel พร้อมรูปภาพ (.xlsx)' เพื่อเซฟเก็บไว้ก่อนล้างข้อมูลครับ")) return;
 
       // เก็บรายการที่มีข้อมูลอยู่เพื่อส่งไปล้างใน Google Sheet
       const itemsToClear = ALL_ITEMS.filter(it => {
@@ -2195,100 +2216,667 @@
       }
     }
 
-    function exportToExcel() {
-      const wb = XLSX.utils.book_new();
-      const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+    function createUULogoDataUrl() {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 320;
+        canvas.height = 110;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const rawHeaders = [
-        "Report_Round (ครั้งที่)",
-        "Page_No (หน้า)",
-        "Equip_No (ลำดับที่ - คงที่)",
-        "Category (หมวดหมู่ - คงที่)",
-        "Equip_Name (ชื่อเครื่องจักร - คงที่)",
-        "Saved_Status (สถานะล็อกวันที่)",
-        "Action_Date (วันที่ดำเนินการ - กรอก)",
-        "Amp_Value (กระแสไฟฟ้า A - กรอก)",
-        "Check_1", "Check_2", "Check_3", "Check_4", "Check_5",
-        "Cal_Percent (ค่า % Slope - กรอก)",
-        "Note (หมายเหตุ - กรอก)",
-        "Photo_1_URL", "Photo_2_URL", "Photo_3_URL", "Photo_4_URL", "Photo_5_URL"
-      ];
+        // วาดโลโก้หยดน้ำ / คลื่นสีน้ำเงิน UU GROUP
+        ctx.fillStyle = "#1d70b8";
+        ctx.beginPath();
+        ctx.arc(46, 48, 28, 0, Math.PI * 2);
+        ctx.fill();
 
-      const rawRows = [rawHeaders];
-      ALL_ITEMS.forEach(item => {
-        const nonAmp = item.subItems.filter(s => s.type !== "amp");
-        rawRows.push([
-          roundText,
-          item.page,
-          item.id,
-          item.category,
-          item.name,
-          item.isSaved ? "บันทึกแล้ว" : "รอบันทึก",
-          item.actionDate,
-          item.hasAmp ? item.ampValue : "",
-          nonAmp[0] ? nonAmp[0].val : "",
-          nonAmp[1] ? nonAmp[1].val : "",
-          nonAmp[2] ? nonAmp[2].val : "",
-          nonAmp[3] ? nonAmp[3].val : "",
-          nonAmp[4] ? nonAmp[4].val : "",
-          item.hasCalibration ? item.calPercent : "",
-          item.note || "",
-          "", "", "", "", ""
-        ]);
+        ctx.fillStyle = "#38bdf8";
+        ctx.beginPath();
+        ctx.arc(54, 42, 18, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 20px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("UU", 48, 55);
+
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#0f4c81";
+        ctx.font = "bold 22px sans-serif";
+        ctx.fillText("Universal Utilities", 90, 46);
+
+        ctx.fillStyle = "#1d70b8";
+        ctx.font = "bold 20px sans-serif";
+        ctx.fillText("GROUP", 90, 74);
+
+        return canvas.toDataURL("image/png");
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const _photoBase64Cache = new Map();
+
+    function blobToDataURL(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
       });
+    }
 
-      const wsRaw = XLSX.utils.aoa_to_sheet(rawRows);
-      XLSX.utils.book_append_sheet(wb, wsRaw, "1_Raw_Data_76_Items");
+    async function fetchPhotoAsBase64(photoSrc) {
+      if (!photoSrc) return null;
+      if (_photoBase64Cache.has(photoSrc)) return _photoBase64Cache.get(photoSrc);
 
-      // สร้าง Sheet 2_Report_Form ครบทั้ง 76 รายการพร้อมสูตรเชื่อมกับ 1_Raw_Data_76_Items
-      const repRows = [
-        [`รายงานการบำรุงรักษาเครื่องจักรและเครื่องมือวัดระบบบำบัดน้ำเสีย ครั้ง  ${roundText}`],
-        ["โครงการ ระบบบำบัดน้ำเสีย นิคมอุตสาหกรรมหลักชัยเมืองยาง ขนาด 3,750 ลูกบาศก์เมตรต่อวัน"],
-        [""],
-        ["ลำดับที่", "ข้อย่อย", "รายการตรวจสอบ", "ความถี่", "Plan", "Actual (ดึงจาก 1_Raw_Data)", "ภาพประกอบ 1", "ภาพประกอบ 2", "ภาพประกอบ 3", "ภาพประกอบ 4", "ภาพประกอบ 5"]
+      if (photoSrc.startsWith("data:image/")) {
+        const ext = photoSrc.includes("image/png") ? "png" : "jpeg";
+        const res = { base64: photoSrc, ext };
+        _photoBase64Cache.set(photoSrc, res);
+        return res;
+      }
+
+      if (!photoSrc.startsWith("http")) return null;
+
+      const candidateUrls = [
+        `https://wsrv.nl/?url=${encodeURIComponent(photoSrc)}&output=jpg&q=88`,
+        `https://images.weserv.nl/?url=${encodeURIComponent(photoSrc)}&output=jpg&q=88`,
+        photoSrc
       ];
 
-      const checkCols = ["I", "J", "K", "L", "M"];
-      ALL_ITEMS.forEach((item, idx) => {
-        const r = idx + 2;
-        if (item.showCategoryHeader) {
-          repRows.push([item.category, "", "", "", "", "", "", "", "", "", ""]);
-        }
-        repRows.push([
-          item.id,
-          item.name,
-          "",
-          "วันที่ดำเนินการ :",
-          "",
-          { f: `'1_Raw_Data_76_Items'!G${r}` },
-          "", "", "", "", ""
-        ]);
-
-        let cIdx = 0;
-        item.subItems.forEach(sub => {
-          let fObj;
-          if (sub.type === "amp") {
-            fObj = { f: `IF('1_Raw_Data_76_Items'!H${r}="", "", IF('1_Raw_Data_76_Items'!H${r}="-", "-", '1_Raw_Data_76_Items'!H${r}&" A"))` };
-          } else {
-            const colLet = checkCols[cIdx++];
-            fObj = { f: `'1_Raw_Data_76_Items'!${colLet}${r}` };
+      for (const candidate of candidateUrls) {
+        try {
+          const resp = await fetch(candidate, { cache: "force-cache" });
+          if (resp.ok) {
+            const blob = await resp.blob();
+            if (blob && blob.size > 100) {
+              const dataUrl = await blobToDataURL(blob);
+              if (dataUrl && dataUrl.startsWith("data:image")) {
+                const ext = dataUrl.includes("image/png") ? "png" : "jpeg";
+                const result = { base64: dataUrl, ext };
+                _photoBase64Cache.set(photoSrc, result);
+                return result;
+              }
+            }
           }
-          repRows.push(["", sub.no, sub.title, sub.freq, sub.freq, fObj, "", "", "", "", ""]);
+        } catch (err) {}
+      }
+      return null;
+    }
+
+    async function exportToExcel() {
+      if (!window.ExcelJS) {
+        alert("กำลังโหลดไลบรารี ExcelJS กรุณารอสักครู่แล้วกดอีกครั้งครับ");
+        return;
+      }
+
+      const modal = document.getElementById("excelExportModal");
+      const bar = document.getElementById("excelExportBar");
+      const countEl = document.getElementById("excelExportCount");
+      const descEl = document.getElementById("excelExportDesc");
+
+      const updateProgress = (pct, msg, subMsg) => {
+        if (modal) modal.style.display = "flex";
+        if (bar) bar.style.width = `${Math.max(5, Math.min(100, pct))}%`;
+        if (countEl && msg) countEl.textContent = msg;
+        if (descEl && subMsg) descEl.textContent = subMsg;
+      };
+
+      try {
+        updateProgress(5, "กำลังซิงค์ข้อมูลล่าสุดจาก Google Sheet...", "ดึงข้อมูลทั้ง 76 รายการเพื่อให้ข้อมูลเป็นปัจจุบันที่สุด");
+        await syncFromGoogleSheet(true);
+
+        const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+
+        // 1. รวบรวม URL รูปภาพทั้งหมดที่ต้องใช้ในรายงาน 15 หน้า
+        const allPhotoUrls = new Set();
+        ALL_ITEMS.forEach(item => {
+          if (item.photoGroup) {
+            getEffectivePhotosForGroup(item.photoGroup).forEach(u => { if (u) allPhotoUrls.add(u); });
+          } else if (Array.isArray(item.photos)) {
+            item.photos.forEach(u => { if (u) allPhotoUrls.add(u); });
+          }
         });
 
-        if (item.hasCalibration) {
-          repRows.push(["", "", "", "", item.calRangeText, "", "", "", "", "", ""]);
-          repRows.push(["", "", "", "", { f: `"อยู่ในช่วง = " & '1_Raw_Data_76_Items'!N${r} & " %"` }, "", "", "", "", "", ""]);
-        }
-        if (item.hasNote) {
-          repRows.push(["Note", { f: `'1_Raw_Data_76_Items'!O${r}` }, "", "", "", "", "", "", "", "", ""]);
-        }
-      });
+        const photoList = Array.from(allPhotoUrls);
+        let loadedCount = 0;
+        updateProgress(10, `กำลังดึงรูปภาพ (0 / ${photoList.length} รูป)...`, "กำลังโหลดรูปภาพความละเอียดสูงเพื่อฝังลงในไฟล์ Excel");
 
-      const wsRep = XLSX.utils.aoa_to_sheet(repRows);
-      XLSX.utils.book_append_sheet(wb, wsRep, "2_Report_Form_76_Items");
+        const batchSize = 8;
+        for (let i = 0; i < photoList.length; i += batchSize) {
+          const batch = photoList.slice(i, i + batchSize);
+          await Promise.all(batch.map(async (u) => {
+            await fetchPhotoAsBase64(u);
+            loadedCount++;
+            const pct = 10 + Math.round((loadedCount / Math.max(1, photoList.length)) * 65);
+            updateProgress(pct, `กำลังดึงรูปภาพ (${loadedCount} / ${photoList.length} รูป)...`);
+          }));
+        }
 
-      XLSX.writeFile(wb, "PM_Report_Complete_76_Items.xlsx");
+        updateProgress(80, "กำลังจัดหน้ากระดาษ 15 หน้า และฝังรูปภาพลงตาราง Excel...", "จัดรูปแบบตาราง สีความถี่ และขนาดรูปภาพให้เหมือนไฟล์ PDF ต้นฉบับ");
+
+        const wb = new ExcelJS.Workbook();
+        wb.creator = "Universal Utilities GROUP - PM Report System";
+        wb.created = new Date();
+
+        // สร้างชีตหลักที่จัดหน้าเหมือน PDF 100% พร้อมฝังรูปภาพจริง
+        const ws = wb.addWorksheet("2_Report_Form_พร้อมรูป", {
+          pageSetup: {
+            paperSize: 9, // A4
+            orientation: "landscape",
+            fitToPage: true,
+            fitToWidth: 1,
+            fitToHeight: 0,
+            margins: { left: 0.22, right: 0.22, top: 0.22, bottom: 0.22, header: 0.1, footer: 0.1 }
+          },
+          views: [{ showGridLines: true }]
+        });
+
+        // ตั้งความกว้างคอลัมน์ A..K ให้ได้สัดส่วนเดียวกับ PDF A4 แนวนอน
+        ws.columns = [
+          { key: "c1", width: 8.5 },   // A: ลำดับที่ / Note
+          { key: "c2", width: 4.8 },   // B: ข้อย่อย 1..6
+          { key: "c3", width: 34.0 },  // C: รายการตรวจสอบ
+          { key: "c4", width: 14.5 },  // D: ความถี่ / วันที่ดำเนินการ
+          { key: "c5", width: 7.2 },   // E: Plan (ช่องสี)
+          { key: "c6", width: 13.5 },  // F: Actual
+          { key: "c7", width: 18.2 },  // G: ภาพประกอบ 1
+          { key: "c8", width: 18.2 },  // H: ภาพประกอบ 2
+          { key: "c9", width: 18.2 },  // I: ภาพประกอบ 3
+          { key: "c10", width: 18.2 }, // J: ภาพประกอบ 4
+          { key: "c11", width: 18.2 }  // K: ภาพประกอบ 5
+        ];
+
+        const thinBorder = {
+          top: { style: "thin", color: { argb: "FF000000" } },
+          left: { style: "thin", color: { argb: "FF000000" } },
+          bottom: { style: "thin", color: { argb: "FF000000" } },
+          right: { style: "thin", color: { argb: "FF000000" } }
+        };
+
+        const fontBase = (size = 9.5, bold = false, argb = "FF000000") => ({
+          name: "Sarabun",
+          size,
+          bold,
+          color: { argb }
+        });
+
+        const fillSolid = (hex) => ({
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF" + hex.replace("#", "").toUpperCase() }
+        });
+
+        const applyBorderRange = (rStart, rEnd, cStart = 1, cEnd = 11) => {
+          for (let r = rStart; r <= rEnd; r++) {
+            const row = ws.getRow(r);
+            for (let c = cStart; c <= cEnd; c++) {
+              row.getCell(c).border = thinBorder;
+            }
+          }
+        };
+
+        // เตรียมรูปโลโก้ UU GROUP
+        const logoDataUrl = createUULogoDataUrl();
+        let logoImgId = null;
+        if (logoDataUrl) {
+          logoImgId = wb.addImage({ base64: logoDataUrl, extension: "png" });
+        }
+
+        // แคช imageId ใน workbook เพื่อไม่ให้เพิ่มรูปซ้ำ
+        const wbImageIdMap = new Map();
+        const getWorkbookImageId = (photoSrc) => {
+          if (!photoSrc) return null;
+          if (wbImageIdMap.has(photoSrc)) return wbImageIdMap.get(photoSrc);
+          const cached = _photoBase64Cache.get(photoSrc);
+          if (!cached) return null;
+          const imgId = wb.addImage({ base64: cached.base64, extension: cached.ext });
+          wbImageIdMap.set(photoSrc, imgId);
+          return imgId;
+        };
+
+        let curRow = 1;
+
+        // วนสร้างทีละหน้า (ครบทั้ง 15 หน้า เหมือน PDF เป๊ะ)
+        for (let pageNo = 1; pageNo <= 15; pageNo++) {
+          const pageItems = ALL_ITEMS.filter(x => x.page === pageNo);
+          const subRowHeight = pageNo === 1 ? 22 : (pageNo <= 8 ? 18.5 : (pageNo === 11 || pageNo === 13 || pageNo === 14 ? 16.5 : 18.5));
+
+          // ---------------- ส่วนหัวกระดาษของแต่ละหน้า (3 แถว + แถวหัวตาราง) ----------------
+          const hdrRow1 = curRow;
+          const hdrRow2 = curRow + 1;
+          const hdrRow3 = curRow + 2;
+          const tblHdrRow = curRow + 3;
+
+          ws.getRow(hdrRow1).height = 20;
+          ws.getRow(hdrRow2).height = 18;
+          ws.getRow(hdrRow3).height = 18;
+          ws.getRow(tblHdrRow).height = 22;
+
+          // โลโก้ด้านซ้ายบน (ผสาน A..B 3 แถว)
+          ws.mergeCells(hdrRow1, 1, hdrRow3, 2);
+          if (logoImgId !== null) {
+            ws.addImage(logoImgId, {
+              tl: { col: 0.08, row: hdrRow1 - 1 + 0.08 },
+              br: { col: 1.95, row: hdrRow3 - 0.08 },
+              editAs: "oneCell"
+            });
+          } else {
+            const logoCell = ws.getCell(hdrRow1, 1);
+            logoCell.value = "Universal Utilities GROUP";
+            logoCell.font = fontBase(11, true, "FF0F4C81");
+            logoCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+          }
+
+          // ชื่อรายงานบรรทัดที่ 1
+          ws.mergeCells(hdrRow1, 3, hdrRow1, 9);
+          const title1 = ws.getCell(hdrRow1, 3);
+          title1.value = `รายงานการบำรุงรักษาเครื่องจักรและเครื่องมือวัดระบบบำบัดน้ำเสีย ครั้ง  ${roundText}`;
+          title1.font = fontBase(12, true);
+          title1.alignment = { horizontal: "center", vertical: "middle" };
+
+          // เลขหน้ามุมขวาบน
+          ws.mergeCells(hdrRow1, 10, hdrRow1, 11);
+          const pageLabel = ws.getCell(hdrRow1, 10);
+          pageLabel.value = `หน้าที่ ${pageNo} / 15`;
+          pageLabel.font = fontBase(9.5, true, "FF475569");
+          pageLabel.alignment = { horizontal: "right", vertical: "middle" };
+
+          // ชื่อโครงการบรรทัดที่ 2
+          ws.mergeCells(hdrRow2, 3, hdrRow2, 9);
+          const title2 = ws.getCell(hdrRow2, 3);
+          title2.value = "โครงการ ระบบบำบัดน้ำเสีย นิคมอุตสาหกรรมหลักชัยเมืองยาง ขนาด 3,750 ลูกบาศก์เมตรต่อวัน";
+          title2.font = fontBase(10.5, true);
+          title2.alignment = { horizontal: "center", vertical: "middle" };
+
+          // แถบสีความถี่ในการทำงานบรรทัดที่ 3
+          const legLabel = ws.getCell(hdrRow3, 3);
+          legLabel.value = "ความถี่ในการทำงาน :";
+          legLabel.font = fontBase(9.5, true);
+          legLabel.alignment = { horizontal: "right", vertical: "middle" };
+
+          const leg1M = ws.getCell(hdrRow3, 4);
+          leg1M.value = "ทุกเดือน";
+          leg1M.fill = fillSolid("#FFFF00");
+          leg1M.font = fontBase(9, true);
+          leg1M.alignment = { horizontal: "center", vertical: "middle" };
+          leg1M.border = thinBorder;
+
+          ws.mergeCells(hdrRow3, 5, hdrRow3, 6);
+          const leg3M = ws.getCell(hdrRow3, 5);
+          leg3M.value = "ทุก 3 เดือน";
+          leg3M.fill = fillSolid("#ED7D31");
+          leg3M.font = fontBase(9, true);
+          leg3M.alignment = { horizontal: "center", vertical: "middle" };
+          ws.getCell(hdrRow3, 5).border = thinBorder;
+          ws.getCell(hdrRow3, 6).border = thinBorder;
+
+          const leg6M = ws.getCell(hdrRow3, 7);
+          leg6M.value = "ทุก 6 เดือน";
+          leg6M.fill = fillSolid("#7030A0");
+          leg6M.font = fontBase(9, true, "FFFFFFFF");
+          leg6M.alignment = { horizontal: "center", vertical: "middle" };
+          leg6M.border = thinBorder;
+
+          const leg1Y = ws.getCell(hdrRow3, 8);
+          leg1Y.value = "ทุก 1 ปี";
+          leg1Y.fill = fillSolid("#70AD47");
+          leg1Y.font = fontBase(9, true);
+          leg1Y.alignment = { horizontal: "center", vertical: "middle" };
+          leg1Y.border = thinBorder;
+
+          // แถวหัวตารางหลัก (ลำดับที่ | รายการตรวจสอบ | ความถี่ | Plan | Actual | ภาพประกอบ)
+          ws.getCell(tblHdrRow, 1).value = "ลำดับที่";
+          ws.mergeCells(tblHdrRow, 2, tblHdrRow, 3);
+          ws.getCell(tblHdrRow, 2).value = "รายการตรวจสอบ";
+          ws.getCell(tblHdrRow, 4).value = "ความถี่";
+          ws.getCell(tblHdrRow, 5).value = "Plan";
+          ws.getCell(tblHdrRow, 6).value = "Actual";
+          ws.mergeCells(tblHdrRow, 7, tblHdrRow, 11);
+          ws.getCell(tblHdrRow, 7).value = "ภาพประกอบ";
+
+          for (let c = 1; c <= 11; c++) {
+            const cell = ws.getCell(tblHdrRow, c);
+            cell.fill = fillSolid("#EFEFEF");
+            cell.font = fontBase(9.5, true);
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+            cell.border = thinBorder;
+          }
+
+          curRow = tblHdrRow + 1;
+
+          // ---------------- รายการเครื่องจักรในหน้านี้ ----------------
+          let idx = 0;
+          while (idx < pageItems.length) {
+            const item = pageItems[idx];
+
+            // กรณีกลุ่มที่ใช้ช่องรูปภาพร่วมกัน (เช่น วาล์ว 43-46, 47-50, Flow 56-57, Grit 58-60, Radar 68-69, 70-71, Washing 74-75)
+            if (item.photoGroup) {
+              const groupName = item.photoGroup;
+              const groupItems = [];
+              while (idx < pageItems.length && pageItems[idx].photoGroup === groupName) {
+                groupItems.push(pageItems[idx]);
+                idx++;
+              }
+
+              const groupPhotos = getEffectivePhotosForGroup(groupName);
+              let photoStartRow = null;
+
+              groupItems.forEach((g, gIdx) => {
+                if (g.showCategoryHeader) {
+                  const catR = curRow++;
+                  ws.getRow(catR).height = 19;
+                  ws.mergeCells(catR, 1, catR, 11);
+                  const catCell = ws.getCell(catR, 1);
+                  catCell.value = g.category;
+                  catCell.font = fontBase(9.5, true);
+                  for (let c = 1; c <= 11; c++) {
+                    ws.getCell(catR, c).fill = fillSolid("#D9D9D9");
+                    ws.getCell(catR, c).border = thinBorder;
+                  }
+                  catCell.alignment = { horizontal: "left", vertical: "middle" };
+                }
+
+                // แถวชื่อเครื่องจักรในกลุ่ม
+                const titleR = curRow++;
+                ws.getRow(titleR).height = subRowHeight;
+                ws.getCell(titleR, 1).value = g.id;
+                ws.getCell(titleR, 1).font = fontBase(9.5, true);
+                ws.getCell(titleR, 1).alignment = { horizontal: "center", vertical: "middle" };
+
+                ws.mergeCells(titleR, 2, titleR, 3);
+                ws.getCell(titleR, 2).value = g.name;
+                ws.getCell(titleR, 2).font = fontBase(9.5, true);
+                ws.getCell(titleR, 2).alignment = { horizontal: "left", vertical: "middle" };
+
+                ws.getCell(titleR, 4).value = "วันที่ดำเนินการ :";
+                ws.getCell(titleR, 4).font = fontBase(9, true);
+                ws.getCell(titleR, 4).alignment = { horizontal: "center", vertical: "middle" };
+
+                ws.getCell(titleR, 6).value = g.actionDate || "";
+                ws.getCell(titleR, 6).font = fontBase(9.5, false);
+                ws.getCell(titleR, 6).alignment = { horizontal: "center", vertical: "middle" };
+
+                if (gIdx === 0) {
+                  ws.mergeCells(titleR, 7, titleR, 11);
+                  applyBorderRange(titleR, titleR, 1, 11);
+                } else {
+                  applyBorderRange(titleR, titleR, 1, 6);
+                }
+
+                const subRowsCount = Math.max(g.minRows, g.subItems.length);
+                for (let r = 0; r < subRowsCount; r++) {
+                  const sRow = curRow++;
+                  if (photoStartRow === null) photoStartRow = sRow;
+                  ws.getRow(sRow).height = subRowHeight;
+
+                  const sub = g.subItems[r];
+                  if (sub) {
+                    let actualDisplay = "";
+                    if (sub.type === "amp") {
+                      actualDisplay = (g.ampValue === "-" || g.ampValue === "") ? g.ampValue : (String(g.ampValue).toUpperCase().includes("A") ? g.ampValue : `${g.ampValue} A`);
+                    } else {
+                      actualDisplay = sub.val || "";
+                    }
+                    ws.getCell(sRow, 2).value = sub.no;
+                    ws.getCell(sRow, 2).font = fontBase(9);
+                    ws.getCell(sRow, 2).alignment = { horizontal: "center", vertical: "middle" };
+
+                    ws.getCell(sRow, 3).value = sub.title;
+                    ws.getCell(sRow, 3).font = fontBase(9);
+                    ws.getCell(sRow, 3).alignment = { horizontal: "left", vertical: "middle" };
+
+                    ws.getCell(sRow, 4).value = sub.freq;
+                    ws.getCell(sRow, 4).font = fontBase(9);
+                    ws.getCell(sRow, 4).alignment = { horizontal: "center", vertical: "middle" };
+
+                    if (sub.planColor) {
+                      ws.getCell(sRow, 5).fill = fillSolid(sub.planColor);
+                    }
+
+                    ws.getCell(sRow, 6).value = actualDisplay;
+                    ws.getCell(sRow, 6).font = fontBase(9.5, actualDisplay === "✓");
+                    ws.getCell(sRow, 6).alignment = { horizontal: "center", vertical: "middle" };
+                  }
+                  applyBorderRange(sRow, sRow, 1, 6);
+                }
+              });
+
+              const photoEndRow = curRow - 1;
+              if (photoStartRow !== null && photoEndRow >= photoStartRow) {
+                for (let p = 0; p < 5; p++) {
+                  const colNo = 7 + p;
+                  if (photoEndRow > photoStartRow) {
+                    ws.mergeCells(photoStartRow, colNo, photoEndRow, colNo);
+                  }
+                  applyBorderRange(photoStartRow, photoEndRow, colNo, colNo);
+
+                  const pSrc = groupPhotos[p];
+                  const imgId = getWorkbookImageId(pSrc);
+                  if (imgId !== null) {
+                    ws.addImage(imgId, {
+                      tl: { col: 6 + p + 0.05, row: photoStartRow - 1 + 0.06 },
+                      br: { col: 7 + p - 0.05, row: photoEndRow - 0.06 },
+                      editAs: "oneCell"
+                    });
+                  }
+                }
+              }
+              continue;
+            }
+
+            // ---------------- กรณีเครื่องจักรปกติ (1–76) ----------------
+            if (item.showCategoryHeader) {
+              const catR = curRow++;
+              ws.getRow(catR).height = 19;
+              ws.mergeCells(catR, 1, catR, 11);
+              const catCell = ws.getCell(catR, 1);
+              catCell.value = item.category;
+              catCell.font = fontBase(9.5, true);
+              for (let c = 1; c <= 11; c++) {
+                ws.getCell(catR, c).fill = fillSolid("#D9D9D9");
+                ws.getCell(catR, c).border = thinBorder;
+              }
+              catCell.alignment = { horizontal: "left", vertical: "middle" };
+            }
+
+            const extraRows = item.hasCalibration ? 2 : Math.max(0, item.minRows - item.subItems.length);
+            const totalSubRows = item.subItems.length + extraRows;
+
+            // แถวชื่อเครื่องจักร + วันที่ดำเนินการ
+            const titleR = curRow++;
+            ws.getRow(titleR).height = subRowHeight;
+            ws.getCell(titleR, 1).value = item.id;
+            ws.getCell(titleR, 1).font = fontBase(9.5, true);
+            ws.getCell(titleR, 1).alignment = { horizontal: "center", vertical: "middle" };
+
+            ws.mergeCells(titleR, 2, titleR, 3);
+            ws.getCell(titleR, 2).value = item.name;
+            ws.getCell(titleR, 2).font = fontBase(9.5, true);
+            ws.getCell(titleR, 2).alignment = { horizontal: "left", vertical: "middle" };
+
+            ws.getCell(titleR, 4).value = "วันที่ดำเนินการ :";
+            ws.getCell(titleR, 4).font = fontBase(9, true);
+            ws.getCell(titleR, 4).alignment = { horizontal: "center", vertical: "middle" };
+
+            ws.getCell(titleR, 6).value = item.actionDate || "";
+            ws.getCell(titleR, 6).font = fontBase(9.5, false);
+            ws.getCell(titleR, 6).alignment = { horizontal: "center", vertical: "middle" };
+
+            ws.mergeCells(titleR, 7, titleR, 11);
+            applyBorderRange(titleR, titleR, 1, 11);
+
+            const photoStartRow = curRow;
+            for (let r = 0; r < totalSubRows; r++) {
+              const sRow = curRow++;
+              ws.getRow(sRow).height = subRowHeight;
+              const sub = item.subItems[r];
+
+              if (sub) {
+                let actualDisplay = "";
+                if (sub.type === "amp") {
+                  actualDisplay = (item.ampValue === "-" || item.ampValue === "") ? item.ampValue : (String(item.ampValue).toUpperCase().includes("A") ? item.ampValue : `${item.ampValue} A`);
+                } else {
+                  actualDisplay = sub.val || "";
+                }
+                ws.getCell(sRow, 2).value = sub.no;
+                ws.getCell(sRow, 2).font = fontBase(9);
+                ws.getCell(sRow, 2).alignment = { horizontal: "center", vertical: "middle" };
+
+                ws.getCell(sRow, 3).value = sub.title;
+                ws.getCell(sRow, 3).font = fontBase(9);
+                ws.getCell(sRow, 3).alignment = { horizontal: "left", vertical: "middle" };
+
+                ws.getCell(sRow, 4).value = sub.freq;
+                ws.getCell(sRow, 4).font = fontBase(9);
+                ws.getCell(sRow, 4).alignment = { horizontal: "center", vertical: "middle" };
+
+                if (sub.planColor) {
+                  ws.getCell(sRow, 5).fill = fillSolid(sub.planColor);
+                }
+
+                ws.getCell(sRow, 6).value = actualDisplay;
+                ws.getCell(sRow, 6).font = fontBase(9.5, actualDisplay === "✓");
+                ws.getCell(sRow, 6).alignment = { horizontal: "center", vertical: "middle" };
+              } else if (item.hasCalibration && r === item.subItems.length) {
+                ws.mergeCells(sRow, 5, sRow, 6);
+                ws.getCell(sRow, 5).value = item.calRangeText;
+                ws.getCell(sRow, 5).font = fontBase(9);
+                ws.getCell(sRow, 5).alignment = { horizontal: "center", vertical: "middle" };
+              } else if (item.hasCalibration && r === item.subItems.length + 1) {
+                ws.mergeCells(sRow, 5, sRow, 6);
+                const calText = item.calPercent ? `อยู่ในช่วง = ${item.calPercent} %` : "อยู่ในช่วง =        %";
+                ws.getCell(sRow, 5).value = calText;
+                ws.getCell(sRow, 5).font = fontBase(9.5, true, "FF1D4ED8");
+                ws.getCell(sRow, 5).alignment = { horizontal: "center", vertical: "middle" };
+              }
+
+              applyBorderRange(sRow, sRow, 1, 6);
+            }
+
+            const photoEndRow = curRow - 1;
+            for (let p = 0; p < 5; p++) {
+              const colNo = 7 + p;
+              if (photoEndRow > photoStartRow) {
+                ws.mergeCells(photoStartRow, colNo, photoEndRow, colNo);
+              }
+              applyBorderRange(photoStartRow, photoEndRow, colNo, colNo);
+
+              const photoSrc = item.photos ? item.photos[p] : "";
+              const imgId = getWorkbookImageId(photoSrc);
+              if (imgId !== null) {
+                ws.addImage(imgId, {
+                  tl: { col: 6 + p + 0.05, row: photoStartRow - 1 + 0.06 },
+                  br: { col: 7 + p - 0.05, row: photoEndRow - 0.06 },
+                  editAs: "oneCell"
+                });
+              }
+            }
+
+            // แถว Note (ถ้ามี)
+            if (item.hasNote || (item.note && item.note.trim() !== "")) {
+              const noteR = curRow++;
+              ws.getRow(noteR).height = subRowHeight;
+              ws.getCell(noteR, 1).value = item.note ? "Note" : "";
+              ws.getCell(noteR, 1).font = fontBase(9, true);
+              ws.getCell(noteR, 1).alignment = { horizontal: "center", vertical: "middle" };
+
+              ws.mergeCells(noteR, 2, noteR, 3);
+              ws.getCell(noteR, 2).value = item.note || "";
+              ws.getCell(noteR, 2).font = fontBase(9.5, true, "FF15803D");
+              ws.getCell(noteR, 2).alignment = { horizontal: "left", vertical: "middle" };
+
+              applyBorderRange(noteR, noteR, 1, 11);
+            }
+
+            idx++;
+          }
+
+          // คั่นหน้ากระดาษ (Page Break) ทุกจบหน้า 1..14 เพื่อให้เวลาสั่งพิมพ์จาก Excel ออกมา 15 หน้าพอดีเหมือน PDF
+          if (pageNo < 15) {
+            ws.getRow(curRow - 1).addPageBreak();
+          }
+        }
+
+        // ---------------- ชีตที่ 2: ตารางข้อมูลดิบ 1_Raw_Data ----------------
+        const wsRaw = wb.addWorksheet("1_Raw_Data");
+        const rawHeaders = [
+          "ครั้งที่รายงาน", "หน้า", "ลำดับที่", "หมวดหมู่", "ชื่อเครื่องจักร",
+          "วันที่ดำเนินการ", "กระแสไฟฟ้า (A)",
+          "ผลตรวจ 1", "ผลตรวจ 2", "ผลตรวจ 3", "ผลตรวจ 4", "ผลตรวจ 5",
+          "ค่า % Cal", "หมายเหตุ (Note)",
+          "Photo_1_URL", "Photo_2_URL", "Photo_3_URL", "Photo_4_URL", "Photo_5_URL"
+        ];
+        wsRaw.addRow(rawHeaders);
+        wsRaw.getRow(1).height = 24;
+        for (let c = 1; c <= rawHeaders.length; c++) {
+          const cell = wsRaw.getCell(1, c);
+          cell.fill = fillSolid("#0F4C81");
+          cell.font = fontBase(10, true, "FFFFFFFF");
+          cell.alignment = { horizontal: "center", vertical: "middle" };
+          cell.border = thinBorder;
+        }
+
+        ALL_ITEMS.forEach(item => {
+          const nonAmp = item.subItems.filter(s => s.type !== "amp");
+          const pOwner = getTargetItemForPhoto(item);
+          const pArr = pOwner.photos || [];
+          const r = wsRaw.addRow([
+            roundText,
+            item.page,
+            item.id,
+            item.category,
+            item.name,
+            item.actionDate || "",
+            item.hasAmp ? (item.ampValue || "") : "",
+            nonAmp[0] ? (nonAmp[0].val || "") : "",
+            nonAmp[1] ? (nonAmp[1].val || "") : "",
+            nonAmp[2] ? (nonAmp[2].val || "") : "",
+            nonAmp[3] ? (nonAmp[3].val || "") : "",
+            nonAmp[4] ? (nonAmp[4].val || "") : "",
+            item.hasCalibration ? (item.calPercent || "") : "",
+            item.note || "",
+            pArr[0] || "",
+            pArr[1] || "",
+            pArr[2] || "",
+            pArr[3] || "",
+            pArr[4] || ""
+          ]);
+          r.height = 20;
+          for (let c = 1; c <= rawHeaders.length; c++) {
+            r.getCell(c).font = fontBase(9.5);
+            r.getCell(c).border = thinBorder;
+          }
+        });
+
+        updateProgress(95, "กำลังบีบอัดและดาวน์โหลดไฟล์ .xlsx...", "เกือบเสร็จแล้วครับ");
+
+        const buffer = await wb.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const safeRound = String(roundText || "Report").replace(/[^a-zA-Z0-9ก-๙_-]/g, "-");
+        const fileName = `PM_Report_ครั้งที่_${safeRound}_พร้อมรูปภาพ.xlsx`;
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          URL.revokeObjectURL(link.href);
+          link.remove();
+        }, 2000);
+
+        updateProgress(100, "✅ ดาวน์โหลดไฟล์ Excel สำเร็จ!", fileName);
+        setTimeout(() => {
+          if (modal) modal.style.display = "none";
+        }, 1200);
+        showMobileToast(`✅ ดาวน์โหลด ${fileName} เรียบร้อยแล้ว!`, "#059669");
+      } catch (err) {
+        if (modal) modal.style.display = "none";
+        alert("⚠️ เกิดข้อผิดพลาดในการสร้างไฟล์ Excel: " + err.message);
+      }
     }
 
     function renderAllViews() {
