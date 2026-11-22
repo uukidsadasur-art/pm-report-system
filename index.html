@@ -2267,60 +2267,25 @@
       });
     }
 
-    // จัดกรอบรูปภาพให้อยู่กึ่งกลางสวยงาม มีขอบขาวรอบด้านเล็กน้อยเพื่อไม่ให้ทับเส้นตาราง Excel และไม่ให้ภาพบิดเบี้ยว
-    function framePhotoForExcelCell(rawDataUrl) {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          try {
-            const cw = 440;
-            const ch = 360;
-            const pad = 12;
-            const canvas = document.createElement("canvas");
-            canvas.width = cw;
-            canvas.height = ch;
-            const ctx = canvas.getContext("2d");
-
-            // พื้นหลังสีขาวสะอาด
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, cw, ch);
-
-            // คำนวณสัดส่วนภาพแบบ Contain ให้อยู่กึ่งกลางพอดี ไม่บีบภาพ
-            const availW = cw - pad * 2;
-            const availH = ch - pad * 2;
-            const scale = Math.min(availW / img.width, availH / img.height);
-            const drawW = Math.round(img.width * scale);
-            const drawH = Math.round(img.height * scale);
-            const dx = Math.round((cw - drawW) / 2);
-            const dy = Math.round((ch - drawH) / 2);
-
-            ctx.drawImage(img, dx, dy, drawW, drawH);
-            resolve(canvas.toDataURL("image/jpeg", 0.90));
-          } catch (e) {
-            resolve(rawDataUrl);
-          }
-        };
-        img.onerror = () => resolve(rawDataUrl);
-        img.src = rawDataUrl;
-      });
-    }
-
     async function fetchPhotoAsBase64(photoSrc) {
       if (!photoSrc) return null;
       if (_photoBase64Cache.has(photoSrc)) return _photoBase64Cache.get(photoSrc);
 
       if (photoSrc.startsWith("data:image/")) {
-        const framed = await framePhotoForExcelCell(photoSrc);
-        const res = { base64: framed, ext: "jpeg" };
+        const ext = photoSrc.includes("image/png") ? "png" : "jpeg";
+        const res = { base64: photoSrc, ext };
         _photoBase64Cache.set(photoSrc, res);
         return res;
       }
 
       if (!photoSrc.startsWith("http")) return null;
 
+      // ใช้ความละเอียดต้นฉบับเต็ม 100% (q=96) โดยไม่บีบขอบขาว เพื่อให้ภาพเต็มช่องตารางและคมชัดเหมือนต้นฉบับที่อัปโหลด
+      const hiResUrl = photoSrc.replace("sz=w1000", "sz=w1600");
       const candidateUrls = [
-        `https://wsrv.nl/?url=${encodeURIComponent(photoSrc)}&output=jpg&q=90`,
-        `https://images.weserv.nl/?url=${encodeURIComponent(photoSrc)}&output=jpg&q=90`,
+        `https://wsrv.nl/?url=${encodeURIComponent(hiResUrl)}&output=jpg&q=96`,
+        `https://images.weserv.nl/?url=${encodeURIComponent(hiResUrl)}&output=jpg&q=96`,
+        hiResUrl,
         photoSrc
       ];
 
@@ -2332,8 +2297,8 @@
             if (blob && blob.size > 100) {
               const rawDataUrl = await blobToDataURL(blob);
               if (rawDataUrl && rawDataUrl.startsWith("data:image")) {
-                const framed = await framePhotoForExcelCell(rawDataUrl);
-                const result = { base64: framed, ext: "jpeg" };
+                const ext = rawDataUrl.includes("image/png") ? "png" : "jpeg";
+                const result = { base64: rawDataUrl, ext };
                 _photoBase64Cache.set(photoSrc, result);
                 return result;
               }
@@ -2695,8 +2660,8 @@
                   const imgId = getWorkbookImageId(pSrc);
                   if (imgId !== null) {
                     ws.addImage(imgId, {
-                      tl: { nativeCol: 6 + p, nativeColOff: 28575, nativeRow: photoStartRow - 1, nativeRowOff: 28575 },
-                      br: { nativeCol: 6 + p, nativeColOff: 1220000, nativeRow: photoEndRow - 1, nativeRowOff: Math.round(subRowHeight * 12700) - 28575 },
+                      tl: { nativeCol: 6 + p, nativeColOff: 9525, nativeRow: photoStartRow - 1, nativeRowOff: 9525 },
+                      br: { nativeCol: 6 + p, nativeColOff: 1247775, nativeRow: photoEndRow - 1, nativeRowOff: Math.round(subRowHeight * 12700) - 9525 },
                       editAs: "oneCell"
                     });
                   }
@@ -2808,8 +2773,8 @@
               const imgId = getWorkbookImageId(photoSrc);
               if (imgId !== null) {
                 ws.addImage(imgId, {
-                  tl: { nativeCol: 6 + p, nativeColOff: 28575, nativeRow: photoStartRow - 1, nativeRowOff: 28575 },
-                  br: { nativeCol: 6 + p, nativeColOff: 1220000, nativeRow: photoEndRow - 1, nativeRowOff: Math.round(subRowHeight * 12700) - 28575 },
+                  tl: { nativeCol: 6 + p, nativeColOff: 9525, nativeRow: photoStartRow - 1, nativeRowOff: 9525 },
+                  br: { nativeCol: 6 + p, nativeColOff: 1247775, nativeRow: photoEndRow - 1, nativeRowOff: Math.round(subRowHeight * 12700) - 9525 },
                   editAs: "oneCell"
                 });
               }
