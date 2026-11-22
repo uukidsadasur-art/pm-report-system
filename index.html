@@ -2267,13 +2267,51 @@
       });
     }
 
+    // จัดกรอบรูปภาพให้อยู่กึ่งกลางสวยงาม มีขอบขาวรอบด้านเล็กน้อยเพื่อไม่ให้ทับเส้นตาราง Excel และไม่ให้ภาพบิดเบี้ยว
+    function framePhotoForExcelCell(rawDataUrl) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const cw = 440;
+            const ch = 360;
+            const pad = 12;
+            const canvas = document.createElement("canvas");
+            canvas.width = cw;
+            canvas.height = ch;
+            const ctx = canvas.getContext("2d");
+
+            // พื้นหลังสีขาวสะอาด
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, cw, ch);
+
+            // คำนวณสัดส่วนภาพแบบ Contain ให้อยู่กึ่งกลางพอดี ไม่บีบภาพ
+            const availW = cw - pad * 2;
+            const availH = ch - pad * 2;
+            const scale = Math.min(availW / img.width, availH / img.height);
+            const drawW = Math.round(img.width * scale);
+            const drawH = Math.round(img.height * scale);
+            const dx = Math.round((cw - drawW) / 2);
+            const dy = Math.round((ch - drawH) / 2);
+
+            ctx.drawImage(img, dx, dy, drawW, drawH);
+            resolve(canvas.toDataURL("image/jpeg", 0.90));
+          } catch (e) {
+            resolve(rawDataUrl);
+          }
+        };
+        img.onerror = () => resolve(rawDataUrl);
+        img.src = rawDataUrl;
+      });
+    }
+
     async function fetchPhotoAsBase64(photoSrc) {
       if (!photoSrc) return null;
       if (_photoBase64Cache.has(photoSrc)) return _photoBase64Cache.get(photoSrc);
 
       if (photoSrc.startsWith("data:image/")) {
-        const ext = photoSrc.includes("image/png") ? "png" : "jpeg";
-        const res = { base64: photoSrc, ext };
+        const framed = await framePhotoForExcelCell(photoSrc);
+        const res = { base64: framed, ext: "jpeg" };
         _photoBase64Cache.set(photoSrc, res);
         return res;
       }
@@ -2281,8 +2319,8 @@
       if (!photoSrc.startsWith("http")) return null;
 
       const candidateUrls = [
-        `https://wsrv.nl/?url=${encodeURIComponent(photoSrc)}&output=jpg&q=88`,
-        `https://images.weserv.nl/?url=${encodeURIComponent(photoSrc)}&output=jpg&q=88`,
+        `https://wsrv.nl/?url=${encodeURIComponent(photoSrc)}&output=jpg&q=90`,
+        `https://images.weserv.nl/?url=${encodeURIComponent(photoSrc)}&output=jpg&q=90`,
         photoSrc
       ];
 
@@ -2292,10 +2330,10 @@
           if (resp.ok) {
             const blob = await resp.blob();
             if (blob && blob.size > 100) {
-              const dataUrl = await blobToDataURL(blob);
-              if (dataUrl && dataUrl.startsWith("data:image")) {
-                const ext = dataUrl.includes("image/png") ? "png" : "jpeg";
-                const result = { base64: dataUrl, ext };
+              const rawDataUrl = await blobToDataURL(blob);
+              if (rawDataUrl && rawDataUrl.startsWith("data:image")) {
+                const framed = await framePhotoForExcelCell(rawDataUrl);
+                const result = { base64: framed, ext: "jpeg" };
                 _photoBase64Cache.set(photoSrc, result);
                 return result;
               }
@@ -2459,8 +2497,8 @@
           ws.mergeCells(hdrRow1, 1, hdrRow3, 2);
           if (logoImgId !== null) {
             ws.addImage(logoImgId, {
-              tl: { col: 0.08, row: hdrRow1 - 1 + 0.08 },
-              br: { col: 1.95, row: hdrRow3 - 0.08 },
+              tl: { nativeCol: 0, nativeColOff: 19050, nativeRow: hdrRow1 - 1, nativeRowOff: 19050 },
+              br: { nativeCol: 1, nativeColOff: 330000, nativeRow: hdrRow3 - 1, nativeRowOff: Math.round(18 * 12700) - 19050 },
               editAs: "oneCell"
             });
           } else {
@@ -2657,8 +2695,8 @@
                   const imgId = getWorkbookImageId(pSrc);
                   if (imgId !== null) {
                     ws.addImage(imgId, {
-                      tl: { col: 6 + p + 0.05, row: photoStartRow - 1 + 0.06 },
-                      br: { col: 7 + p - 0.05, row: photoEndRow - 0.06 },
+                      tl: { nativeCol: 6 + p, nativeColOff: 28575, nativeRow: photoStartRow - 1, nativeRowOff: 28575 },
+                      br: { nativeCol: 6 + p, nativeColOff: 1220000, nativeRow: photoEndRow - 1, nativeRowOff: Math.round(subRowHeight * 12700) - 28575 },
                       editAs: "oneCell"
                     });
                   }
@@ -2682,7 +2720,9 @@
               catCell.alignment = { horizontal: "left", vertical: "middle" };
             }
 
-            const extraRows = item.hasCalibration ? 2 : Math.max(0, item.minRows - item.subItems.length);
+            const hasActualNote = Boolean(item.note && item.note.trim() !== "");
+            const minTargetRows = (!hasActualNote && item.minRows === 5) ? 6 : item.minRows;
+            const extraRows = item.hasCalibration ? 2 : Math.max(0, minTargetRows - item.subItems.length);
             const totalSubRows = item.subItems.length + extraRows;
 
             // แถวชื่อเครื่องจักร + วันที่ดำเนินการ
@@ -2768,23 +2808,23 @@
               const imgId = getWorkbookImageId(photoSrc);
               if (imgId !== null) {
                 ws.addImage(imgId, {
-                  tl: { col: 6 + p + 0.05, row: photoStartRow - 1 + 0.06 },
-                  br: { col: 7 + p - 0.05, row: photoEndRow - 0.06 },
+                  tl: { nativeCol: 6 + p, nativeColOff: 28575, nativeRow: photoStartRow - 1, nativeRowOff: 28575 },
+                  br: { nativeCol: 6 + p, nativeColOff: 1220000, nativeRow: photoEndRow - 1, nativeRowOff: Math.round(subRowHeight * 12700) - 28575 },
                   editAs: "oneCell"
                 });
               }
             }
 
-            // แถว Note (ถ้ามี)
-            if (item.hasNote || (item.note && item.note.trim() !== "")) {
+            // แถว Note (แสดงเฉพาะเมื่อมีการพิมพ์ข้อความหมายเหตุจริงๆ เพื่อไม่ให้เกิดแถวว่างคั่นใต้รูปภาพ)
+            if (hasActualNote) {
               const noteR = curRow++;
               ws.getRow(noteR).height = subRowHeight;
-              ws.getCell(noteR, 1).value = item.note ? "Note" : "";
+              ws.getCell(noteR, 1).value = "Note";
               ws.getCell(noteR, 1).font = fontBase(9, true);
               ws.getCell(noteR, 1).alignment = { horizontal: "center", vertical: "middle" };
 
-              ws.mergeCells(noteR, 2, noteR, 3);
-              ws.getCell(noteR, 2).value = item.note || "";
+              ws.mergeCells(noteR, 2, noteR, 11);
+              ws.getCell(noteR, 2).value = item.note.trim();
               ws.getCell(noteR, 2).font = fontBase(9.5, true, "FF15803D");
               ws.getCell(noteR, 2).alignment = { horizontal: "left", vertical: "middle" };
 
