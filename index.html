@@ -680,6 +680,30 @@
             <!-- Toast Status Message -->
             <div id="mobileToast" style="display:none;background:#065f46;color:#fff;padding:10px 12px;border-radius:8px;margin-bottom:10px;font-size:13px;font-weight:600;text-align:center;"></div>
 
+            <!-- Archive / Multi-Month Round Switcher -->
+            <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:9px 10px;margin-bottom:10px;">
+              <label class="form-label" style="font-size:12px;color:#0f4c81;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+                <span>🗂️ เลือกรอบเดือน (ปัจจุบัน / ดูประวัติย้อนหลัง):</span>
+                <span id="historyCountBadge" style="font-size:11px;color:#64748b;font-weight:600;"></span>
+              </label>
+              <select id="roundHistorySelect" class="form-select" style="padding:7px 10px;font-size:13.5px;font-weight:700;color:#0f4c81;background:#fff;" onchange="onSelectRoundHistory(this.value)">
+                <option value="__CURRENT__">🟢 รอบปัจจุบัน (กำลังกรอก)</option>
+              </select>
+            </div>
+
+            <!-- Banner when viewing Archived Past Round -->
+            <div id="historyModeBanner" style="display:none;background:#fef3c7;border:1.5px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;color:#92400e;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <div>
+                  <strong>📁 โหมดดูประวัติย้อนหลัง รอบที่ <span id="historyModeRoundLabel">-</span></strong>
+                  <div style="font-size:11.5px;">สามารถดูรายงาน 15 หน้า, Export Excel พร้อมรูป หรือแก้ไขย้อนหลังได้โดยไม่กระทบเดือนปัจจุบัน</div>
+                </div>
+                <button type="button" class="toggle-btn" style="background:#fff;border-color:#d97706;color:#92400e;font-weight:700;padding:5px 10px;font-size:12px;" onclick="onSelectRoundHistory('__CURRENT__')">
+                  🔙 กลับมารอบปัจจุบัน
+                </button>
+              </div>
+            </div>
+
             <!-- Round & Sticky Date Row -->
             <div style="background:#f0f7ff;padding:10px;border-radius:10px;border:1px solid #bae6fd;margin-bottom:12px;">
               <div style="display:grid;grid-template-columns:95px 1fr;gap:8px;">
@@ -774,8 +798,8 @@
               <button type="button" class="toggle-btn" style="flex:1;padding:9px;background:#f1f5f9;color:#0f4c81;border-color:#cbd5e1;" onclick="switchTab('report')">
                 📄 ดูรายงาน 15 หน้า / พิมพ์ PDF
               </button>
-              <button type="button" class="toggle-btn" style="padding:9px 12px;background:#fef2f2;color:#dc2626;border-color:#fca5a5;" onclick="clearAllMonthlyInputs()">
-                🧹 ล้างทั้งหมด (ขึ้นเดือนใหม่)
+              <button type="button" class="toggle-btn" style="padding:9px 12px;background:#fff7ed;color:#c2410c;border-color:#fdba74;font-weight:700;" onclick="clearAllMonthlyInputs()">
+                📦 ปิดรอบ & ขึ้นเดือนใหม่
               </button>
             </div>
           </div>
@@ -799,7 +823,7 @@
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn-action green" onclick="exportToExcel()">📥 ดาวน์โหลด Excel จัดหน้าเหมือน PDF พร้อมรูปภาพ (.xlsx)</button>
-            <button class="btn-action" onclick="clearAllMonthlyInputs()" style="background:#dc2626;">🧹 ล้างค่าที่กรอก (เตรียมขึ้นเดือนใหม่)</button>
+            <button class="btn-action" onclick="clearAllMonthlyInputs()" style="background:#ea580c;">📦 ปิดรอบเก็บประวัติ & ขึ้นเดือนใหม่</button>
           </div>
         </div>
 
@@ -849,8 +873,13 @@
       <h3 id="confirmModalTitle" style="margin:0 0 8px 0;color:#0f4c81;font-size:17px;">ยืนยันการดำเนินการ</h3>
       <p id="confirmModalMessage" style="margin:0 0 14px 0;font-size:13.5px;color:#334155;line-height:1.5;white-space:pre-line;"></p>
 
+      <div id="confirmModalNewRoundBox" style="display:none;margin-bottom:12px;text-align:left;">
+        <label class="form-label" style="font-size:12.5px;color:#0f4c81;">📅 ชื่อรอบรายงานเดือนใหม่ (เช่น 6/69):</label>
+        <input type="text" id="confirmModalNewRoundInput" class="form-control" style="font-size:15px;padding:9px;text-align:center;font-weight:700;color:#0f4c81;" placeholder="เช่น 6/69" />
+      </div>
+
       <div id="confirmModalPasswordBox" style="display:none;margin-bottom:14px;text-align:left;">
-        <label class="form-label" style="font-size:12.5px;color:#0f4c81;">🔒 กรุณาใส่รหัสยืนยันเพื่อล้างข้อมูลทั้งหมด:</label>
+        <label class="form-label" style="font-size:12.5px;color:#0f4c81;">🔒 กรุณาใส่รหัสยืนยัน:</label>
         <input type="password" id="confirmModalPasswordInput" class="form-control" style="font-size:15px;padding:10px;text-align:center;letter-spacing:3px;" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter') executeConfirmModalAction();" />
         <div id="confirmModalError" style="display:none;color:#dc2626;font-size:12px;font-weight:700;margin-top:6px;text-align:center;">❌ รหัสยืนยันไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง</div>
       </div>
@@ -1290,7 +1319,9 @@
       if (!gasWebAppUrl || !gasWebAppUrl.startsWith("https://script.google.com")) return;
       try {
         if (!silent) showMobileToast(`☁️ กำลังส่งข้อมูลเครื่อง #${item.id} เข้า Google Sheet...`, "#0369a1");
-        const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+        const roundText = window.viewingHistoryRound
+          ? window.viewingHistoryRound
+          : (document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69");
         const nonAmpChecks = item.subItems.filter(s => s.type !== "amp").map(s => s.val || "");
         const photoOwner = getTargetItemForPhoto(item);
         const pArr = photoOwner.photos || [];
@@ -1303,6 +1334,7 @@
           pArr[4] || ""
         ];
         const payload = {
+          targetSheet: window.viewingHistoryRound ? "PM_History" : "1_Raw_Data",
           round: roundText,
           id: item.id,
           category: item.category,
@@ -1319,11 +1351,13 @@
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-        if (item.id === 1) {
-          window._lastSyncedRoundOnRow1 = roundText;
-        } else if (window._lastSyncedRoundOnRow1 !== roundText && ALL_ITEMS[0]) {
-          window._lastSyncedRoundOnRow1 = roundText;
-          pushItemToGoogleSheet(ALL_ITEMS[0], true);
+        if (!window.viewingHistoryRound) {
+          if (item.id === 1) {
+            window._lastSyncedRoundOnRow1 = roundText;
+          } else if (window._lastSyncedRoundOnRow1 !== roundText && ALL_ITEMS[0]) {
+            window._lastSyncedRoundOnRow1 = roundText;
+            pushItemToGoogleSheet(ALL_ITEMS[0], true);
+          }
         }
         if (res.ok) {
           const json = await res.json();
@@ -1774,7 +1808,7 @@
     let _pendingConfirmCallback = null;
     let _pendingRequirePassword = false;
 
-    function openConfirmModal({ icon = "⚠️", title = "ยืนยันการดำเนินการ", message = "", okText = "ยืนยัน", requirePassword = false, onConfirm = null }) {
+    function openConfirmModal({ icon = "⚠️", title = "ยืนยันการดำเนินการ", message = "", okText = "ยืนยัน", requirePassword = false, showNewRoundInput = false, defaultNewRound = "", onConfirm = null }) {
       const modal = document.getElementById("confirmActionModal");
       if (!modal) return;
       document.getElementById("confirmModalIcon").textContent = icon;
@@ -1782,12 +1816,24 @@
       document.getElementById("confirmModalMessage").textContent = message;
       document.getElementById("confirmModalOkBtn").textContent = okText;
 
+      const newRoundBox = document.getElementById("confirmModalNewRoundBox");
+      const newRoundInput = document.getElementById("confirmModalNewRoundInput");
       const pwBox = document.getElementById("confirmModalPasswordBox");
       const pwInput = document.getElementById("confirmModalPasswordInput");
       const errEl = document.getElementById("confirmModalError");
 
       _pendingRequirePassword = !!requirePassword;
       _pendingConfirmCallback = onConfirm;
+
+      if (newRoundBox && newRoundInput) {
+        if (showNewRoundInput) {
+          newRoundBox.style.display = "block";
+          newRoundInput.value = defaultNewRound || "";
+        } else {
+          newRoundBox.style.display = "none";
+          newRoundInput.value = "";
+        }
+      }
 
       if (requirePassword) {
         pwBox.style.display = "block";
@@ -1824,9 +1870,11 @@
           return;
         }
       }
+      const newRoundInput = document.getElementById("confirmModalNewRoundInput");
+      const newRoundVal = newRoundInput ? newRoundInput.value.trim() : "";
       const cb = _pendingConfirmCallback;
       closeConfirmModal();
-      if (typeof cb === "function") cb();
+      if (typeof cb === "function") cb(newRoundVal);
     }
 
     function removePhotoAt(slotIdx) {
@@ -2273,63 +2321,82 @@
       });
     }
 
+    function suggestNextRound(curRound) {
+      const m = String(curRound || "").trim().match(/^(\d+)\s*\/\s*(\d+)$/);
+      if (!m) return curRound || "6/69";
+      let num = parseInt(m[1], 10) + 1;
+      let yr = parseInt(m[2], 10);
+      if (num > 12) { num = 1; yr += 1; }
+      return `${num}/${yr}`;
+    }
+
     function clearAllMonthlyInputs() {
+      if (window.viewingHistoryRound) {
+        alert("กรุณากลับไปที่ '🟢 รอบปัจจุบัน' ก่อนปิดรอบและขึ้นเดือนใหม่ครับ");
+        return;
+      }
+      const currentRound = (document.getElementById("globalRound") ? document.getElementById("globalRound").value : "5/69").trim() || "5/69";
+      const suggestedNext = suggestNextRound(currentRound);
+
       openConfirmModal({
-        icon: "🔒",
-        title: "ยืนยันการล้างข้อมูลทั้งหมด (ขึ้นเดือนใหม่)",
-        message: "การดำเนินการนี้จะล้างค่าที่กรอกและรูปภาพของทั้ง 76 รายการ (รวมถึงใน Google Sheet ด้วย) เพื่อเตรียมตารางว่างสำหรับเดือนถัดไป\n\n💡 แนะนำให้กดดาวน์โหลดไฟล์ Excel (.xlsx) เก็บไว้ก่อนดำเนินการ",
-        okText: "🧹 ยืนยันล้างทั้งหมด",
+        icon: "📦",
+        title: `ปิดรอบที่ ${currentRound} เก็บเข้าประวัติ & ขึ้นเดือนใหม่`,
+        message: `ระบบจะเก็บข้อมูลและรูปภาพทั้งหมดของรอบที่ ${currentRound} ไว้ในชีตประวัติ (PM_History) โดยไม่ลบทิ้ง สามารถเลือกดูย้อนหลังหรือ Export Excel/PDF ได้ตลอดเวลา\n\nจากนั้นจะเปิดตารางว่างสำหรับรอบเดือนใหม่ให้ทันที`,
+        okText: "📦 ยืนยันเก็บประวัติ & ขึ้นเดือนใหม่",
         requirePassword: true,
-        onConfirm: async () => {
-          // เก็บรายการที่มีข้อมูลอยู่เพื่อส่งไปล้างใน Google Sheet
-          const itemsToClear = ALL_ITEMS.filter(it => {
-            const hasChecks = it.subItems.some(s => s.type !== "amp" && s.val);
-            const hasPhotos = Array.isArray(it.photos) && it.photos.some(p => p);
-            return it.isSaved || it.actionDate || it.ampValue || it.calPercent || it.note || hasChecks || hasPhotos;
-          });
-          const targetList = itemsToClear.length > 0 ? itemsToClear : ALL_ITEMS;
+        showNewRoundInput: true,
+        defaultNewRound: suggestedNext,
+        onConfirm: async (newRoundInputVal) => {
+          const newRound = (newRoundInputVal || suggestedNext).trim();
+          if (!gasWebAppUrl || !gasWebAppUrl.startsWith("https://script.google.com")) {
+            alert("⚠️ ยังไม่ได้เชื่อมต่อลิงก์ Google Apps Script Web App");
+            return;
+          }
 
-          resetItemsToCleanTemplate();
-          persistStateToStorage();
-          renderMobileControls();
-          renderAllViews();
+          window._isClearingSheet = true;
+          try {
+            showMobileToast(`📦 กำลังเก็บรอบ ${currentRound} เข้าประวัติ PM_History และเปิดรอบ ${newRound}...`, "#0369a1");
+            const res = await fetch(gasWebAppUrl, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({
+                action: "archive_and_new_round",
+                currentRound: currentRound,
+                newRound: newRound
+              })
+            });
 
-          if (gasWebAppUrl && gasWebAppUrl.startsWith("https://script.google.com")) {
-            window._isClearingSheet = true;
-            try {
-              showMobileToast(`🧹 กำลังล้างข้อมูลใน Google Sheet (0/${targetList.length})...`, "#b45309");
-              const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
-
-              // 1. ลองสั่ง clear_all แบบรวดเดียวก่อน (หากอัปเดตสคริปต์ล่าสุดแล้วจะเสร็จใน 1 วินาที)
-              let clearedFast = false;
+            let archivedOk = false;
+            if (res.ok) {
               try {
-                const res = await fetch(gasWebAppUrl, {
-                  method: "POST",
-                  headers: { "Content-Type": "text/plain;charset=utf-8" },
-                  body: JSON.stringify({ action: "clear_all", round: roundText })
-                });
-                if (res.ok) {
-                  const json = await res.json();
-                  if (json && json.clearedAll) clearedFast = true;
-                }
+                const json = await res.json();
+                if (json && json.archived) archivedOk = true;
               } catch (e) {}
-
-              // 2. หากยังเป็นสคริปต์เวอร์ชันเดิม ให้ส่งล้างทีละชุดจนครบทุกรายการที่มีข้อมูล
-              if (!clearedFast) {
-                const batchSize = 4;
-                for (let i = 0; i < targetList.length; i += batchSize) {
-                  const batch = targetList.slice(i, i + batchSize);
-                  await Promise.all(batch.map(it => pushItemToGoogleSheet(it, true)));
-                  const done = Math.min(targetList.length, i + batch.length);
-                  showMobileToast(`🧹 กำลังล้างข้อมูลใน Google Sheet (${done}/${targetList.length})...`, "#b45309");
-                }
-              }
-              showMobileToast("✅ ล้างข้อมูลและลิงก์รูปภาพใน Google Sheet เรียบร้อยแล้ว! รีเฟรชหน้าเว็บได้เลยข้อมูลเก่าจะไม่กลับมาอีก", "#059669");
-            } finally {
-              window._isClearingSheet = false;
             }
-          } else {
-            showMobileToast("✅ ล้างค่าทั้งหมดเรียบร้อยแล้ว!", "#059669");
+
+            if (!archivedOk) {
+              alert("⚠️ ไม่สามารถเก็บประวัติลงชีต PM_History ได้ (ข้อมูลปัจจุบันยังไม่ถูกลบ)\n\nกรุณาอัปเดตโค้ด Google Apps Script ตัวล่าสุดใน Google Sheet และกด Deploy > Manage deployments > New version ก่อนใช้งานปุ่มปิดรอบเก็บประวัติครับ");
+              showMobileToast("⚠️ กรุณาอัปเดตและ Deploy Apps Script เวอร์ชันใหม่ก่อนปิดรอบ", "#b45309");
+              return;
+            }
+
+            // เก็บประวัติสำเร็จแล้ว -> เริ่มรอบใหม่สะอาดในหน้าเว็บ
+            window.viewingHistoryRound = null;
+            window._userEditedRound = "";
+            window._lastSyncedRoundOnRow1 = newRound;
+            if (document.getElementById("globalRound")) {
+              document.getElementById("globalRound").value = newRound;
+            }
+            resetItemsToCleanTemplate();
+            persistStateToStorage();
+            renderMobileControls();
+            renderAllViews();
+            await loadHistoryFromGoogleSheet();
+            showMobileToast(`✅ เก็บประวัติรอบ ${currentRound} ไว้ใน PM_History เรียบร้อยแล้ว และเริ่มรอบใหม่ ${newRound} ทันที!`, "#059669");
+          } catch (err) {
+            alert("⚠️ เกิดข้อผิดพลาดขณะเชื่อมต่อ Google Sheet (ข้อมูลปัจจุบันยังไม่ถูกลบ): " + err.message);
+          } finally {
+            window._isClearingSheet = false;
           }
         }
       });
@@ -2447,10 +2514,16 @@
       };
 
       try {
-        updateProgress(5, "กำลังซิงค์ข้อมูลล่าสุดจาก Google Sheet...", "ดึงข้อมูลทั้ง 76 รายการเพื่อให้ข้อมูลเป็นปัจจุบันที่สุด");
-        await syncFromGoogleSheet(true);
+        if (!window.viewingHistoryRound) {
+          updateProgress(5, "กำลังซิงค์ข้อมูลล่าสุดจาก Google Sheet...", "ดึงข้อมูลทั้ง 76 รายการเพื่อให้ข้อมูลเป็นปัจจุบันที่สุด");
+          await syncFromGoogleSheet(true);
+        } else {
+          updateProgress(5, `กำลังเตรียมข้อมูลประวัติรอบที่ ${window.viewingHistoryRound}...`, "เตรียมสร้างไฟล์ Excel พร้อมรูปภาพย้อนหลัง");
+        }
 
-        const roundText = document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69";
+        const roundText = window.viewingHistoryRound
+          ? window.viewingHistoryRound
+          : (document.getElementById("globalRound") ? document.getElementById("globalRound").value : "2/69");
 
         // 1. รวบรวม URL รูปภาพทั้งหมดที่ต้องใช้ในรายงาน 15 หน้า
         const allPhotoUrls = new Set();
@@ -3031,9 +3104,169 @@
     }
 
     const GOOGLE_SHEET_ID = "1t44kkGGjRiUCRCYmySL62ohrPX5EBY8PJWU0CCTSmvQ";
+    window.viewingHistoryRound = null;
+    window.historyRoundsCache = {};
+
+    function applyRowsToItems(rows, offset = 0, isHistory = false) {
+      let latestDateFound = "";
+      rows.forEach(row => {
+        const c = row.c || [];
+        const val = idx => (c[idx] && c[idx].v !== null && c[idx].v !== undefined) ? String(c[idx].f || c[idx].v).trim() : "";
+        const equipId = Number(val(2));
+        const target = ALL_ITEMS.find(x => x.id === equipId);
+        if (target) {
+          if (!isHistory && equipId === 1) {
+            const roundStr = val(1);
+            if (roundStr && !window._userEditedRound && document.getElementById("globalRound")) {
+              document.getElementById("globalRound").value = roundStr;
+              window._lastSyncedRoundOnRow1 = roundStr;
+            }
+          }
+          const actDate = val(5 + offset);
+          const ampVal = val(6 + offset);
+          target.actionDate = actDate;
+          if (actDate) latestDateFound = actDate;
+          if (target.hasAmp) target.ampValue = ampVal;
+
+          const nonAmp = target.subItems.filter(s => s.type !== "amp");
+          let hasAnyCheck = false;
+          for (let i = 0; i < nonAmp.length; i++) {
+            const checkVal = val(7 + offset + i);
+            nonAmp[i].val = checkVal;
+            if (checkVal !== "") hasAnyCheck = true;
+          }
+
+          const calVal = val(12 + offset);
+          if (target.hasCalibration) {
+            target.calPercent = calVal;
+          }
+          const noteVal = val(13 + offset);
+          target.note = noteVal;
+
+          const loadedPhotos = [];
+          let hasAnyPhoto = false;
+          for (let p = 0; p < 5; p++) {
+            const pUrl = val(14 + offset + p);
+            if (pUrl && pUrl.startsWith("http")) {
+              loadedPhotos[p] = pUrl;
+              hasAnyPhoto = true;
+            } else {
+              loadedPhotos[p] = "";
+            }
+          }
+          target.photos = hasAnyPhoto ? loadedPhotos : [];
+          target.isSaved = Boolean(actDate || ampVal || hasAnyCheck || calVal || noteVal || hasAnyPhoto);
+        }
+      });
+      if (latestDateFound) {
+        lastSavedActionDate = latestDateFound;
+      }
+      const cur = ALL_ITEMS[currentEquipIndex];
+      if (cur && !cur.isSaved && !cur.actionDate) {
+        cur.actionDate = lastSavedActionDate;
+      }
+    }
+
+    function renderRoundHistoryDropdown() {
+      const sel = document.getElementById("roundHistorySelect");
+      const badge = document.getElementById("historyCountBadge");
+      if (!sel) return;
+      const activeRound = window._lastSyncedRoundOnRow1 || (document.getElementById("globalRound") ? document.getElementById("globalRound").value : "5/69");
+      const archivedRounds = Object.keys(window.historyRoundsCache).reverse();
+
+      let opts = `<option value="__CURRENT__" ${!window.viewingHistoryRound ? "selected" : ""}>🟢 รอบปัจจุบัน: ${activeRound} (กำลังกรอก)</option>`;
+      archivedRounds.forEach(r => {
+        const selected = window.viewingHistoryRound === r ? "selected" : "";
+        opts += `<option value="${r}" ${selected}>📁 ประวัติย้อนหลัง: รอบที่ ${r} (ดู/แก้ไข/Export)</option>`;
+      });
+      sel.innerHTML = opts;
+      if (badge) {
+        badge.textContent = archivedRounds.length > 0 ? `เก็บประวัติไว้แล้ว ${archivedRounds.length} รอบ` : "ยังไม่มีประวัติรอบเก่า";
+      }
+    }
+
+    async function loadHistoryFromGoogleSheet() {
+      try {
+        const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=PM_History&_t=${Date.now()}`;
+        const res = await fetch(url, { cache: "no-store" });
+        const text = await res.text();
+        if (!text.includes("{")) return;
+        const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+        const data = JSON.parse(jsonStr);
+        if (data && data.status !== "error" && data.table && Array.isArray(data.table.rows)) {
+          const grouped = {};
+          const offset = (data.table.cols && data.table.cols.length >= 20) ? 1 : 0;
+          data.table.rows.forEach(row => {
+            const c = row.c || [];
+            const roundVal = (c[1] && c[1].v !== null && c[1].v !== undefined) ? String(c[1].f || c[1].v).trim() : "";
+            const idVal = (c[2] && c[2].v !== null && c[2].v !== undefined) ? Number(c[2].f || c[2].v) : 0;
+            if (roundVal && idVal > 0) {
+              if (!grouped[roundVal]) grouped[roundVal] = { rows: [], offset };
+              grouped[roundVal].rows.push(row);
+            }
+          });
+          window.historyRoundsCache = grouped;
+        }
+      } catch (e) {}
+      renderRoundHistoryDropdown();
+    }
+
+    async function onSelectRoundHistory(selectedVal) {
+      const banner = document.getElementById("historyModeBanner");
+      const bannerLabel = document.getElementById("historyModeRoundLabel");
+      const roundInput = document.getElementById("globalRound");
+
+      if (!selectedVal || selectedVal === "__CURRENT__") {
+        window.viewingHistoryRound = null;
+        if (banner) banner.style.display = "none";
+        if (roundInput) roundInput.readOnly = false;
+        resetItemsToCleanTemplate();
+        await syncFromGoogleSheet(true);
+        renderRoundHistoryDropdown();
+        showMobileToast("🟢 กลับมาหน้าจอรอบปัจจุบันเรียบร้อยแล้ว", "#059669");
+        return;
+      }
+
+      // โหลดข้อมูลประวัติย้อนหลังจาก PM_History
+      if (!window.historyRoundsCache[selectedVal]) {
+        await loadHistoryFromGoogleSheet();
+      }
+      const histData = window.historyRoundsCache[selectedVal];
+      if (!histData || !histData.rows) {
+        alert("ไม่พบข้อมูลของรอบที่ " + selectedVal);
+        return;
+      }
+
+      window.viewingHistoryRound = selectedVal;
+      if (banner) banner.style.display = "block";
+      if (bannerLabel) bannerLabel.textContent = selectedVal;
+      if (roundInput) {
+        roundInput.value = selectedVal;
+        roundInput.readOnly = true;
+      }
+
+      resetItemsToCleanTemplate();
+      applyRowsToItems(histData.rows, histData.offset || 0, true);
+      renderMobileControls();
+      renderAllViews();
+      renderRoundHistoryDropdown();
+      showMobileToast(`📁 โหลดข้อมูลประวัติย้อนหลัง รอบที่ ${selectedVal} ครบทั้ง 76 รายการแล้ว!`, "#b45309");
+    }
 
     async function syncFromGoogleSheet(silent = false) {
       if (window._isClearingSheet) return;
+      if (window.viewingHistoryRound) {
+        await loadHistoryFromGoogleSheet();
+        const histData = window.historyRoundsCache[window.viewingHistoryRound];
+        if (histData && histData.rows) {
+          resetItemsToCleanTemplate();
+          applyRowsToItems(histData.rows, histData.offset || 0, true);
+          renderMobileControls();
+          renderAllViews();
+          if (!silent) showMobileToast(`✅ ดึงข้อมูลประวัติรอบที่ ${window.viewingHistoryRound} ล่าสุดแล้ว!`, "#059669");
+        }
+        return;
+      }
       try {
         const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=1_Raw_Data&_t=${Date.now()}`;
         const res = await fetch(url, { cache: "no-store" });
@@ -3042,72 +3275,17 @@
         const data = JSON.parse(jsonStr);
         if (data && data.table && Array.isArray(data.table.rows)) {
           const offset = (data.table.cols && data.table.cols.length >= 20) ? 1 : 0;
-          let latestDateFound = "";
-          data.table.rows.forEach(row => {
-            const c = row.c || [];
-            const val = idx => (c[idx] && c[idx].v !== null && c[idx].v !== undefined) ? String(c[idx].f || c[idx].v).trim() : "";
-            const equipId = Number(val(2));
-            const target = ALL_ITEMS.find(x => x.id === equipId);
-            if (target) {
-              // ดึงค่าครั้งที่รายงาน (Report_Round) จากแถวที่ 1 (ช่อง B2 ซึ่งหน้า 2_Report_Form อ้างอิง) เท่านั้น ไม่ให้แถว 2..76 มาเขียนทับ
-              if (equipId === 1) {
-                const roundStr = val(1);
-                if (roundStr && !window._userEditedRound && document.getElementById("globalRound")) {
-                  document.getElementById("globalRound").value = roundStr;
-                  window._lastSyncedRoundOnRow1 = roundStr;
-                }
-              }
-              const actDate = val(5 + offset);
-              const ampVal = val(6 + offset);
-              target.actionDate = actDate;
-              if (actDate) latestDateFound = actDate;
-              if (target.hasAmp) target.ampValue = ampVal;
-
-              const nonAmp = target.subItems.filter(s => s.type !== "amp");
-              let hasAnyCheck = false;
-              for (let i = 0; i < nonAmp.length; i++) {
-                const checkVal = val(7 + offset + i);
-                nonAmp[i].val = checkVal;
-                if (checkVal !== "") hasAnyCheck = true;
-              }
-
-              const calVal = val(12 + offset);
-              if (target.hasCalibration) {
-                target.calPercent = calVal;
-              }
-              const noteVal = val(13 + offset);
-              target.note = noteVal;
-
-              const loadedPhotos = [];
-              let hasAnyPhoto = false;
-              for (let p = 0; p < 5; p++) {
-                const pUrl = val(14 + offset + p);
-                if (pUrl && pUrl.startsWith("http")) {
-                  loadedPhotos[p] = pUrl;
-                  hasAnyPhoto = true;
-                } else {
-                  loadedPhotos[p] = "";
-                }
-              }
-              target.photos = hasAnyPhoto ? loadedPhotos : [];
-              target.isSaved = Boolean(actDate || ampVal || hasAnyCheck || calVal || noteVal || hasAnyPhoto);
-            }
-          });
-          if (latestDateFound) {
-            lastSavedActionDate = latestDateFound;
-          }
-          const cur = ALL_ITEMS[currentEquipIndex];
-          if (cur && !cur.isSaved && !cur.actionDate) {
-            cur.actionDate = lastSavedActionDate;
-          }
+          applyRowsToItems(data.table.rows, offset, false);
           persistStateToStorage();
           renderMobileControls();
           renderAllViews();
+          renderRoundHistoryDropdown();
           if (!silent) showMobileToast("✅ ดึงข้อมูลล่าสุดทั้ง 76 รายการจาก Google Sheet เรียบร้อยแล้ว!", "#059669");
         }
       } catch (err) {
         if (!silent) alert("⚠️ ไม่สามารถดึงข้อมูลจาก Google Sheet ได้: " + err.message);
       }
+      loadHistoryFromGoogleSheet();
     }
 
     // เริ่มต้นระบบด้วยตารางสะอาด (ไม่สร้างรูปจำลอง ไม่คืนค่าตัวอย่างเก่า) แล้วดึงข้อมูลจริงจาก Google Sheet
