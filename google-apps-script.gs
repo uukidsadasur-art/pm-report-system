@@ -38,9 +38,27 @@ function toSheetImageUrl(urlOrId) {
 /**
  * รับข้อมูลจากแอพมือถือเมื่อกดปุ่ม "บันทึก" แล้วอัปเดตลง Google Sheet ทันที
  */
+function getOrCreateHistorySheet(ss) {
+  let histSheet = ss.getSheetByName("PM_History");
+  if (!histSheet) {
+    histSheet = ss.insertSheet("PM_History");
+    const headers = [
+      "Timestamp", "Report_Round", "Equip_No", "Category", "Equip_Name",
+      "Action_Date (วันที่ดำเนินการ)", "Amp_Value (กระแสไฟ A)",
+      "Check_1", "Check_2", "Check_3", "Check_4", "Check_5",
+      "Cal_Percent (ค่า % Slope)", "Note (หมายเหตุ)",
+      "Photo_1_URL", "Photo_2_URL", "Photo_3_URL", "Photo_4_URL", "Photo_5_URL"
+    ];
+    histSheet.getRange(1, 1, 1, headers.length).setValues([headers])
+      .setBackground("#1e3a5f").setFontColor("#ffffff").setFontWeight("bold");
+    histSheet.setFrozenRows(1);
+  }
+  return histSheet;
+}
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  lock.tryLock(15000);
+  lock.tryLock(20000);
   try {
     const payload = JSON.parse(e.postData.contents);
 
@@ -57,6 +75,65 @@ function doPost(e) {
       rawSheet = ss.getSheetByName("1_Raw_Data");
     }
 
+    // ปิดรอบปัจจุบัน -> ย้ายเก็บประวัติในชีต PM_History (ไม่ลบข้อมูล/รูป) -> เปิดตารางว่างสำหรับรอบเดือนใหม่
+    if (payload.action === "archive_and_new_round") {
+      const master = getMasterEquipmentList();
+      const rawVals = rawSheet.getDataRange().getValues();
+      const currentRound = String(payload.currentRound || (rawVals[1] ? rawVals[1][1] : "") || "5/69").trim();
+      const newRound = String(payload.newRound || "").trim() || currentRound;
+
+      const histSheet = getOrCreateHistorySheet(ss);
+      const histVals = histSheet.getDataRange().getValues();
+
+      // เก็บเฉพาะแถวของรอบอื่นไว้ (ป้องกันข้อมูลซ้ำหากเคยเก็บรอบนี้แล้ว)
+      const keptHistoryRows = [];
+      for (let r = 1; r < histVals.length; r++) {
+        if (String(histVals[r][1]).trim() !== currentRound) {
+          keptHistoryRows.push(histVals[r].slice(0, 19));
+        }
+      }
+
+      // เตรียมแถว 76 รายการของรอบปัจจุบันที่จะเก็บเข้าประวัติ
+      const rowsToArchive = [];
+      for (let r = 1; r < rawVals.length; r++) {
+        const row = rawVals[r].slice(0, 19);
+        while (row.length < 19) row.push("");
+        if (!row[2]) continue; // ข้ามแถวว่างที่ไม่มี Equip_No
+        row[1] = currentRound;
+        for (let p = 14; p <= 18; p++) {
+          if (row[p]) row[p] = toSheetImageUrl(row[p]);
+        }
+        rowsToArchive.push(row);
+      }
+
+      const finalHistory = keptHistoryRows.concat(rowsToArchive);
+      if (histSheet.getLastRow() > 1) {
+        histSheet.getRange(2, 1, histSheet.getLastRow() - 1, 19).clearContent();
+      }
+      if (finalHistory.length > 0) {
+        histSheet.getRange(2, 1, finalHistory.length, 19).setValues(finalHistory);
+      }
+
+      // ล้าง 1_Raw_Data ให้พร้อมสำหรับรอบเดือนใหม่
+      const emptyRows = master.map(item => [
+        "", newRound, item.id, item.cat, item.name,
+        "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+      ]);
+      rawSheet.getRange(2, 1, emptyRows.length, 19).setValues(emptyRows);
+      if (rawSheet.getLastRow() > emptyRows.length + 1) {
+        rawSheet.getRange(emptyRows.length + 2, 1, rawSheet.getLastRow() - emptyRows.length - 1, 19).clearContent();
+      }
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        archived: true,
+        archivedRound: currentRound,
+        archivedCount: rowsToArchive.length,
+        newRound: newRound
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     if (payload.action === "clear_all") {
       const master = getMasterEquipmentList();
       const roundStr = payload.round || "2/69";
@@ -70,16 +147,21 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    const dataRange = rawSheet.getDataRange().getValues();
+    // เลือกว่าจะเขียนลงชีต 1_Raw_Data (รอบปัจจุบัน) หรือ PM_History (แก้ไขรอบย้อนหลัง)
+    const isHistoryEdit = payload.targetSheet === "PM_History";
+    const targetSheet = isHistoryEdit ? getOrCreateHistorySheet(ss) : rawSheet;
+    const dataRange = targetSheet.getDataRange().getValues();
     let targetRow = -1;
     for (let r = 1; r < dataRange.length; r++) {
-      if (String(dataRange[r][2]).trim() === String(payload.id).trim()) {
+      const matchId = String(dataRange[r][2]).trim() === String(payload.id).trim();
+      const matchRound = !isHistoryEdit || (String(dataRange[r][1]).trim() === String(payload.round || "").trim());
+      if (matchId && matchRound) {
         targetRow = r + 1;
         break;
       }
     }
     if (targetRow === -1) {
-      targetRow = rawSheet.getLastRow() + 1;
+      targetRow = targetSheet.getLastRow() + 1;
     }
 
     // ดึง URL รูปเดิมในแถวนั้นไว้ก่อน (กรณีไม่ได้อัพรูปใหม่ทับ)
@@ -143,13 +225,14 @@ function doPost(e) {
       photoUrls[4]
     ];
 
-    rawSheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
+    targetSheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
     SpreadsheetApp.flush();
 
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
       equipId: payload.id,
       row: targetRow,
+      sheet: targetSheet.getName(),
       photoUrls: photoUrls
     })).setMimeType(ContentService.MimeType.JSON);
 
